@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GINA 2025 氣喘指引 — 互動式臨床筆記</title>
+<style>
+:root {
+  --green: #1D9E75; --green-bg: #E1F5EE; --green-border: #9FE1CB; --green-dark: #085041;
+  --blue: #185FA5; --blue-bg: #E6F1FB; --blue-border: #B5D4F4; --blue-dark: #042C53;
+  --brown: #854F0B; --brown-bg: #FAEEDA; --brown-border: #FAC775; --brown-dark: #412402;
+  --amber: #BA7517; --amber-bg: #FAEEDA;
+  --red: #A32D2D; --red-bg: #FCEBEB; --red-border: #F7C1C1;
+  --teal: #0F6E56; --teal-bg: #E1F5EE; --teal-border: #9FE1CB;
+  --purple: #534AB7; --purple-bg: #EEEDFE; --purple-border: #CECBF6;
+  --gray-bg: #F1EFE8; --gray-border: #D3D1C7; --gray-text: #444441;
+  --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
+  --bg: #ffffff; --bg2: #f8f7f4; --bg3: #f1efea;
+  --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.18);
+  --radius: 8px; --radius-lg: 12px; --radius-xl: 16px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --green-bg: #04342C; --green-border: #0F6E56; --green: #5DCAA5;
+    --blue-bg: #042C53; --blue-border: #185FA5; --blue: #85B7EB;
+    --brown-bg: #412402; --brown-border: #854F0B; --brown: #FAC775;
+    --red-bg: #501313; --red-border: #A32D2D; --red: #F09595;
+    --purple-bg: #26215C; --purple-border: #534AB7; --purple: #AFA9EC;
+    --teal-bg: #04342C; --teal-border: #0F6E56; --teal: #5DCAA5;
+    --gray-bg: #2C2C2A; --gray-border: #444441; --gray-text: #D3D1C7;
+    --text: #e8e6de; --text2: #b4b2a9; --text3: #888780;
+    --bg: #1e1d1b; --bg2: #252422; --bg3: #2a2927;
+    --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.18);
+    --amber-bg: #412402;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Helvetica Neue', 'PingFang TC', 'Microsoft JhengHei', Arial, sans-serif; font-size: 14px; line-height: 1.65; color: var(--text); background: var(--bg3); }
+
+/* Layout */
+.app { max-width: 960px; margin: 0 auto; padding: 0 12px 48px; }
+.header { padding: 20px 4px 16px; border-bottom: 0.5px solid var(--border2); margin-bottom: 16px; }
+.header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.header .subtitle { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.header .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.hbadge { font-size: 11px; padding: 2px 10px; border-radius: 20px; border: 0.5px solid; }
+.hbadge.g { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+.hbadge.b { background: var(--blue-bg); border-color: var(--blue-border); color: var(--blue); }
+.hbadge.br { background: var(--brown-bg); border-color: var(--brown-border); color: var(--brown); }
+
+/* Tab nav */
+.tab-nav { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; border-bottom: 0.5px solid var(--border); padding-bottom: 10px; }
+.tab-btn { padding: 6px 14px; font-size: 13px; border: 0.5px solid var(--border2); border-radius: var(--radius); cursor: pointer; background: var(--bg2); color: var(--text2); transition: all .15s; white-space: nowrap; }
+.tab-btn:hover { background: var(--bg); color: var(--text); }
+.tab-btn.active { background: var(--bg); border-color: var(--border2); color: var(--text); font-weight: 500; box-shadow: var(--shadow); }
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Cards */
+.card { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 10px; }
+.card-sm { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
+
+/* Section label */
+.sec-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); margin: 16px 0 8px 2px; }
+
+/* Definition grid */
+.def-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+.def-card { padding: 12px 14px; border-radius: var(--radius-lg); border: 0.5px solid; }
+.def-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.def-card p { font-size: 12px; line-height: 1.55; color: var(--text2); }
+.dc-red { background: var(--red-bg); border-color: var(--red-border); }
+.dc-red h3 { color: var(--red); }
+.dc-amber { background: var(--brown-bg); border-color: var(--brown-border); }
+.dc-amber h3 { color: var(--brown); }
+.dc-blue { background: var(--blue-bg); border-color: var(--blue-border); }
+.dc-blue h3 { color: var(--blue); }
+.dc-teal { background: var(--teal-bg); border-color: var(--teal-border); }
+.dc-teal h3 { color: var(--teal); }
+
+/* Alert boxes */
+.alert { padding: 9px 13px; border-radius: var(--radius); margin: 8px 0; font-size: 12px; line-height: 1.55; border: 0.5px solid; }
+.alert-warn { background: var(--red-bg); border-color: var(--red-border); color: var(--red); }
+.alert-info { background: var(--blue-bg); border-color: var(--blue-border); color: var(--blue); }
+.alert-tip { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+.alert-amber { background: var(--brown-bg); border-color: var(--brown-border); color: var(--brown); }
+.alert strong { font-weight: 600; }
+
+/* Accordion steps */
+.steps { display: flex; flex-direction: column; gap: 8px; }
+.step-card { border-radius: var(--radius-lg); border: 0.5px solid; overflow: hidden; }
+.step-card.sc-green { background: var(--green-bg); border-color: var(--green-border); }
+.step-card.sc-blue { background: var(--blue-bg); border-color: var(--blue-border); }
+.step-card.sc-brown { background: var(--brown-bg); border-color: var(--brown-border); }
+.step-head { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; user-select: none; }
+.step-head:hover { filter: brightness(0.97); }
+.step-num { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; color: #fff; }
+.sc-green .step-num { background: var(--green); }
+.sc-blue .step-num { background: var(--blue); }
+.sc-brown .step-num { background: var(--brown); }
+.step-title { font-size: 13px; font-weight: 500; flex: 1; color: var(--text); }
+.step-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; flex-shrink: 0; }
+.sc-green .step-badge { background: var(--green); color: #fff; }
+.sc-blue .step-badge { background: var(--blue); color: #fff; }
+.sc-brown .step-badge { background: var(--brown); color: #fff; }
+.step-chevron { font-size: 11px; color: var(--text3); transition: transform .2s; flex-shrink: 0; }
+.step-card.open .step-chevron { transform: rotate(180deg); }
+.step-body { display: none; padding: 10px 14px 14px 50px; border-top: 0.5px solid var(--border); background: var(--bg); }
+.step-card.open .step-body { display: block; }
+
+/* Checklists */
+ul.cl { list-style: none; padding: 0; }
+ul.cl li { padding: 3px 0 3px 18px; position: relative; font-size: 13px; line-height: 1.55; }
+ul.cl li::before { content: '▸'; position: absolute; left: 0; color: var(--text3); font-size: 10px; top: 6px; }
+.sub-h { font-size: 12px; font-weight: 600; color: var(--text2); margin: 10px 0 4px; }
+.divider { height: 0.5px; background: var(--border); margin: 10px 0; }
+.cite { font-size: 11px; color: var(--text3); margin-top: 10px; padding-top: 8px; border-top: 0.5px solid var(--border); }
+
+/* Biologic cards */
+.bio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bio-card { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 13px 15px; }
+.bio-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 3px; color: var(--blue); }
+.bio-drug { font-size: 11px; color: var(--text3); margin-bottom: 10px; font-style: italic; }
+.bio-row { display: flex; gap: 8px; margin-bottom: 5px; }
+.bio-lbl { font-size: 11px; color: var(--text3); min-width: 68px; flex-shrink: 0; padding-top: 1px; font-weight: 500; }
+.bio-val { font-size: 12px; line-height: 1.5; }
+.ptag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 4px; margin: 2px 2px 2px 0; }
+.pt-strong { background: #C0DD97; color: #27500A; }
+.pt-mod { background: var(--blue-bg); color: var(--blue); }
+
+/* T2 biomarkers */
+.bm-table { width: 100%; border-collapse: collapse; }
+.bm-table th { font-size: 11px; font-weight: 600; color: var(--text3); text-align: left; padding: 5px 8px; border-bottom: 0.5px solid var(--border2); }
+.bm-table td { font-size: 12px; padding: 6px 8px; border-bottom: 0.5px solid var(--border); }
+.bm-table tr:last-child td { border-bottom: none; }
+.bm-table tr:hover td { background: var(--bg2); }
+
+/* Track cards */
+.track-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.track-card { border-radius: var(--radius-lg); border: 0.5px solid; padding: 13px 15px; }
+.tc-pref { background: var(--green-bg); border-color: var(--green-border); }
+.tc-alt { background: var(--gray-bg); border-color: var(--gray-border); }
+.tc-pref h3 { color: var(--green); font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.tc-alt h3 { color: var(--gray-text); font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.tc-tag { display: inline-block; font-size: 10px; padding: 1px 8px; border-radius: 20px; margin-left: 6px; vertical-align: middle; font-weight: 500; }
+.tag-pref { background: var(--green); color: #fff; }
+.tag-alt { background: var(--gray-border); color: var(--gray-text); }
+
+/* Step grid for track */
+.step-grid { display: flex; flex-direction: column; gap: 6px; }
+.sg-row { background: var(--bg2); border-radius: var(--radius); padding: 8px 11px; border: 0.5px solid var(--border); }
+.sg-row .sg-step { font-size: 11px; font-weight: 600; color: var(--text3); margin-bottom: 2px; }
+.sg-row .sg-med { font-size: 12px; font-weight: 500; }
+.sg-row .sg-note { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+/* Stats row */
+.stat-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.stat-box { flex: 1; background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 12px 14px; }
+.stat-box .stat-num { font-size: 22px; font-weight: 500; }
+.stat-box .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.stat-box.sb-red .stat-num { color: var(--red); }
+.stat-box.sb-amber .stat-num { color: var(--brown); }
+.stat-box.sb-blue .stat-num { color: var(--blue); }
+
+/* What's new section */
+.new-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.new-item { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 12px 14px; }
+.new-item .new-tag { font-size: 10px; font-weight: 600; padding: 1px 8px; border-radius: 20px; display: inline-block; margin-bottom: 6px; }
+.new-item h4 { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.new-item p { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.nt-blue { background: var(--blue-bg); color: var(--blue); border: 0.5px solid var(--blue-border); }
+.nt-green { background: var(--green-bg); color: var(--green); border: 0.5px solid var(--green-border); }
+.nt-amber { background: var(--brown-bg); color: var(--brown); border: 0.5px solid var(--brown-border); }
+.nt-red { background: var(--red-bg); color: var(--red); border: 0.5px solid var(--red-border); }
+
+/* Assessment table */
+.ctrl-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+.ctrl-table th { background: var(--bg2); font-size: 11px; font-weight: 600; color: var(--text2); padding: 7px 10px; border: 0.5px solid var(--border2); text-align: center; }
+.ctrl-table td { padding: 7px 10px; border: 0.5px solid var(--border); text-align: center; vertical-align: middle; }
+.ctrl-table .q-col { text-align: left; }
+.ctrl-well { color: var(--green); font-weight: 500; }
+.ctrl-part { color: var(--brown); font-weight: 500; }
+.ctrl-un { color: var(--red); font-weight: 500; }
+
+/* OCS warning box */
+.ocs-box { background: var(--red-bg); border: 1px solid var(--red-border); border-radius: var(--radius-lg); padding: 12px 14px; margin: 10px 0; }
+.ocs-box strong { color: var(--red); font-size: 13px; }
+.ocs-box ul { font-size: 12px; color: var(--red); padding-left: 14px; margin-top: 5px; }
+.ocs-box ul li { margin-bottom: 3px; }
+
+/* Footer */
+.footer { font-size: 11px; color: var(--text3); margin-top: 20px; padding-top: 10px; border-top: 0.5px solid var(--border); }
+.footer a { color: var(--blue); text-decoration: none; }
+
+/* Exacerbation severity table */
+.sev-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sev-table th { background: var(--bg2); font-size: 11px; font-weight: 600; color: var(--text2); padding: 6px 10px; border: 0.5px solid var(--border2); text-align: left; }
+.sev-table td { padding: 6px 10px; border: 0.5px solid var(--border); vertical-align: top; }
+.sev-mild td:first-child { color: var(--green); font-weight: 500; }
+.sev-mod td:first-child { color: var(--brown); font-weight: 500; }
+.sev-sev td:first-child { color: var(--red); font-weight: 500; }
+.sev-life td:first-child { color: var(--red); font-weight: 700; }
+
+@media (max-width: 640px) {
+  .def-grid { grid-template-columns: 1fr; }
+  .bio-grid { grid-template-columns: 1fr; }
+  .track-grid { grid-template-columns: 1fr; }
+  .new-grid { grid-template-columns: 1fr; }
+  .stat-row { flex-wrap: wrap; }
+  .step-body { padding-left: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <h1>GINA 2025 氣喘指引 — 互動式臨床筆記</h1>
+  <div class="subtitle">整合 GINA Severe Asthma Guide V6.0 (July 2025) &amp; GINA Global Strategy Report (Updated Nov 2025)</div>
+  <div class="badge-row">
+    <span class="hbadge g">青少年與成人 ≥12 歲</span>
+    <span class="hbadge b">難治型 / 重症氣喘</span>
+    <span class="hbadge br">治療步驟 Track 1/2</span>
+    <span class="hbadge g">生物製劑選擇</span>
+    <span class="hbadge b">急性惡化處理</span>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('overview',this)">總覽與定義</button>
+  <button class="tab-btn" onclick="showTab('whats-new',this)">2025 新更新</button>
+  <button class="tab-btn" onclick="showTab('assessment',this)">評估與控制分級</button>
+  <button class="tab-btn" onclick="showTab('tracks',this)">治療步驟 Track 1/2</button>
+  <button class="tab-btn" onclick="showTab('severe',this)">難治型/重症決策路徑</button>
+  <button class="tab-btn" onclick="showTab('t2',this)">Type 2 表型鑑定</button>
+  <button class="tab-btn" onclick="showTab('biologics',this)">生物製劑</button>
+  <button class="tab-btn" onclick="showTab('exacerbation',this)">急性惡化處理</button>
+  <button class="tab-btn" onclick="showTab('meds',this)">藥物速查</button>
+</div>
+
+<!-- ===== TAB 1: 總覽與定義 ===== -->
+<div id="tab-overview" class="panel active">
+  <div class="sec-label">核心定義（ERS/ATS 2014 + GINA 2025）</div>
+  <div class="def-grid">
+    <div class="def-card dc-red">
+      <h3>控制不佳（uncontrolled）</h3>
+      <p>症狀控制差（頻繁症狀、reliever 過度使用、活動受限、夜間症狀）<em>或</em>頻繁惡化（≥2次/年需OCS；≥1次/年需住院）。</p>
+    </div>
+    <div class="def-card dc-amber">
+      <h3>難治型（difficult-to-treat）</h3>
+      <p>使用 medium/high-dose ICS + 第二種控制劑（LABA）或 maintenance OCS 仍控制不佳；或需高劑量才能維持控制。<strong>不代表「困難病人」</strong>——多數有可修正因素。</p>
+    </div>
+    <div class="def-card dc-blue">
+      <h3>重症氣喘（severe asthma）</h3>
+      <p>難治型的子集。在最大化高劑量 ICS-LABA + 修正可調因素後仍無法控制；或降低劑量即惡化。目前是<em>回溯性</em>診斷。若解決 inhaler technique/adherence 問題後顯著改善，則不算重症。</p>
+    </div>
+  </div>
+  <div class="alert alert-tip">重要：<strong>先確認 inhaler technique 與 adherence 均已達最佳化，才能診斷重症氣喘。</strong></div>
+
+  <div class="sec-label">盛行率（荷蘭資料，Hekking et al 2015）</div>
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-num">~24%</div><div class="stat-lbl">氣喘病人使用 GINA Step 4–5 治療</div></div>
+    <div class="stat-box sb-amber"><div class="stat-num">~17%</div><div class="stat-lbl">難治型氣喘（Step 4–5 + 症狀控制差）</div></div>
+    <div class="stat-box sb-blue"><div class="stat-num">~3.7%</div><div class="stat-lbl">重症氣喘（+ 良好 adherence/technique 確認）</div></div>
+  </div>
+
+  <div class="sec-label">重症氣喘的衝擊</div>
+  <div class="ocs-box">
+    <strong>OCS 副作用——減少使用是最優先目標</strong>
+    <ul>
+      <li>長期/頻繁 OCS：肥胖、糖尿病、骨質疏鬆（脆性骨折）、白內障、高血壓、腎上腺抑制、憂鬱/焦慮</li>
+      <li>短程 OCS：睡眠障礙、感染風險↑、骨折風險↑、血栓栓塞</li>
+      <li>即使一生中僅 4–5 個療程，累積長期副作用風險仍顯著上升</li>
+    </ul>
+  </div>
+  <ul class="cl">
+    <li>頻繁呼吸困難、喘鳴、胸悶、咳嗽干擾日常生活與睡眠</li>
+    <li>影響家庭、社交、職涯與心理健康；患者常感到孤立無援</li>
+    <li>英國資料：每位患者醫療費用高於第 2 型糖尿病、腦中風、COPD</li>
+    <li>加拿大資料：重症未控制氣喘占全部氣喘醫療費用 &gt;60%</li>
+    <li>青少年：約 30% 重症氣喘在 3 年內可改善；較高基準血液 eosinophil 是預測轉好的唯一報告因素</li>
+  </ul>
+
+  <div class="footer">
+    來源：GINA Severe Asthma Guide V6.0, July 2025 ·
+    定義參考：Chung et al, Eur Respir J 2014;43:343 ·
+    盛行率：Hekking et al, J Allergy Clin Immunol 2015;135:896
+  </div>
+</div>
+
+<!-- ===== TAB 2: What's New ===== -->
+<div id="tab-whats-new" class="panel">
+  <div class="alert alert-info" style="margin-bottom:12px">以下為 GINA 2025 策略報告主要更新重點（對比 2024 版本），包含 Nov 2025 次要修訂。</div>
+  <div class="new-grid">
+    <div class="new-item">
+      <span class="new-tag nt-blue">T2 Biomarkers 新附錄</span>
+      <h4>Appendix A：T2 biomarker 完整整合</h4>
+      <p>將散布各章節的血液 eosinophils 和 FeNO 資訊整合為新資源（Appendix A, p.217），包含影響數值變異的因素（如明顯的晝夜變動：血液 eosinophils 早上較高，FeNO 下午較高）。臨床意義：評估生物製劑療法資格時需格外謹慎。</p>
+    </div>
+    <div class="new-item">
+      <span class="new-tag nt-amber">重症氣喘決策樹</span>
+      <h4>Decision tree 重新整理簡化</h4>
+      <p>重症氣喘診斷確認移至 stage 5（專科初評後），以納入「可能沒有氣喘」或「有可治療的共病」情況。T2 biomarker 評估段落澄清，新增提示：若臨床情境改變（如停止 OCS）需重新評估低值 biomarker。</p>
+    </div>
+    <div class="new-item">
+      <span class="new-tag nt-green">治療步驟更新</span>
+      <h4>Track 2 Step 4 改為 medium-dose ICS-LABA</h4>
+      <p>由原本的 medium-to-high 改為 medium-dose ICS-LABA（p.77, 89），呼應長期強調最小化高劑量 ICS 副作用。若需要 high-dose ICS-LABA，建議限制在 3–6 個月。fluticasone furoate 劑量重新分類。</p>
+    </div>
+    <div class="new-item">
+      <span class="new-tag nt-blue">診斷流程</span>
+      <h4>成人/青少年診斷流程圖更新</h4>
+      <p>「variable expiratory airflow limitation」改為「variable expiratory airflow」，避免混淆。Biomarkers 在診斷中的（有限）角色已加入流程圖（FeNO &gt;50 ppb 成人/青少年，&gt;35 ppb 兒童可支持 T2 氣喘，但較低值不能排除）。</p>
+    </div>
+    <div class="new-item">
+      <span class="new-tag nt-amber">評估</span>
+      <h4>ORACLE2 研究——嚴重惡化風險因素</h4>
+      <p>支持 GINA 長期建議：應考量多重因素（含 T2 biomarkers）評估惡化風險。注意：ORACLE2 因資料限制未能評估 SABA 過度使用風險；需要實際場域研究。</p>
+    </div>
+    <div class="new-item">
+      <span class="new-tag nt-red">急性惡化</span>
+      <h4>急性惡化處理更新</h4>
+      <p>初始 SABA 劑量澄清（避免過度使用）。<strong>Nebulized magnesium 已不再建議</strong>（成人/兒童均適用）。Intravenous magnesium 在中重度惡化有更多證據支持。兒童氧飽和目標改為 ≥94%。</p>
+    </div>
+    <div class="new-item">
+      <span class="new-tag nt-green">藥物安全</span>
+      <h4>Fenoterol 新增於不建議清單</h4>
+      <p>因心血管副作用較高及氣喘死亡率增加，fenoterol 加入不建議使用的支氣管擴張劑清單（p.93）。</p>
+    </div>
+    <div class="new-item">
+      <span class="new-tag nt-blue">兒科（≤5 歲）</span>
+      <h4>幼兒診斷與治療大幅修訂</h4>
+      <p>確認 ≤5 歲可診斷氣喘，提供三大臨床標準實用框架（反覆喘鳴、排除其他診斷、對治療有反應）。治療圖更新。ICS-formoterol 在幼兒研究進行中。</p>
+    </div>
+    <div class="new-item">
+      <span class="new-tag nt-amber">吸入器選擇</span>
+      <h4>吸入器選擇決策流程更新</h4>
+      <p>環境影響的考量時機更明確：<strong>先</strong>選對病人最佳的藥物，<strong>再</strong>在可選不同吸入器裝置時考量環境影響。</p>
+    </div>
+    <div class="new-item">
+      <span class="new-tag nt-green">氣候</span>
+      <h4>極端氣候對氣喘影響（新章節）</h4>
+      <p>極端高溫與低溫均與氣喘惡化風險增加及急診需求相關（p.130）。COVID-19 封城期間惡化大幅減少，提醒外在環境因素對氣喘惡化的重大影響。</p>
+    </div>
+  </div>
+  <div class="footer">來源：GINA Global Strategy for Asthma Management and Prevention, Updated Nov 2025, p.19–21 · <a href="https://ginasthma.org" target="_blank">www.ginasthma.org</a></div>
+</div>
+
+<!-- ===== TAB 3: 評估與控制分級 ===== -->
+<div id="tab-assessment" class="panel">
+  <div class="sec-label">氣喘控制評估（過去 4 週）</div>
+  <table class="ctrl-table">
+    <thead>
+      <tr>
+        <th class="q-col">問題（過去 4 週）</th>
+        <th>良好控制<br><span class="ctrl-well">Well-controlled</span></th>
+        <th>部分控制<br><span class="ctrl-part">Partly controlled</span></th>
+        <th>控制不佳<br><span class="ctrl-un">Uncontrolled</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="q-col">日間症狀 &gt;2 次/週？</td><td>無</td><td rowspan="4" style="vertical-align:middle;text-align:center;color:var(--brown)">1–2 項有</td><td rowspan="4" style="vertical-align:middle;text-align:center;color:var(--red)">3–4 項有</td></tr>
+      <tr><td class="q-col">夜間因氣喘清醒？</td><td>無</td></tr>
+      <tr><td class="q-col">SABA reliever 使用 &gt;2 次/週？</td><td>無</td></tr>
+      <tr><td class="q-col">任何活動限制？</td><td>無</td></tr>
+    </tbody>
+  </table>
+  <div class="alert alert-info" style="margin-top:8px">使用 as-needed ICS-formoterol（Track 1）者：reliever 使用頻率標準<strong>不適用</strong>，因使用本身已提供額外 ICS。應評估過去 4 週平均使用頻率供調整決策參考。</div>
+
+  <div class="sec-label">惡化風險因素評估（Box 2-2B）</div>
+  <div class="def-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:12px;">
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">即使症狀控制良好，仍增加惡化風險的獨立因素</div>
+      <ul class="cl">
+        <li>SABA 過度使用：≥3罐200吸/年→惡化風險↑；≥12罐/年→死亡風險顯著↑</li>
+        <li>未處方 ICS；依從性差；吸入器使用技巧錯誤</li>
+        <li>肥胖、慢性鼻竇炎、GERD、確認食物過敏、懷孕</li>
+        <li>吸菸、電子菸、過敏原暴露（已致敏）、空氣汙染</li>
+        <li>重大心理/社經問題</li>
+        <li>低 FEV₁（尤其 &lt;60% 預測值）、高 bronchodilator 反應</li>
+        <li>血液 eosinophils 升高、FeNO 升高</li>
+        <li>過去一年 ≥1 次嚴重惡化；曾因氣喘插管/ICU</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">持續氣流受限風險因素</div>
+      <ul class="cl" style="margin-bottom:10px">
+        <li>早產、低出生體重、嬰兒期體重增加過快</li>
+        <li>未接受 ICS 治療（有嚴重惡化史者）</li>
+        <li>菸草煙霧、職業/家庭暴露</li>
+        <li>初始 FEV₁ 低；痰液或血液 eosinophilia</li>
+      </ul>
+      <div class="sub-h">藥物副作用風險因素</div>
+      <ul class="cl">
+        <li>全身性：頻繁 OCS；長期高劑量/高效價 ICS；P450 抑制劑（ketoconazole, itraconazole, ritonavir, clarithromycin）</li>
+        <li>局部：高劑量/高效價 ICS；inhaler technique 差</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sec-label">氣喘嚴重度分級（回溯性定義）</div>
+  <div class="alert alert-amber">嚴重度為回溯性評估——至少 2–3 個月治療後，依控制症狀/惡化所需治療強度而定。「輕度氣喘」詞彙應盡量避免使用，或補充說明：即使症狀輕微，仍可能發生嚴重或致命惡化，ICS 治療能大幅降低此風險。</div>
+  <div class="def-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+    <div class="def-card dc-teal"><h3>輕度</h3><p>Step 1–2 即可控制良好（as-needed ICS-formoterol 或低劑量 ICS）</p></div>
+    <div class="def-card dc-amber"><h3>中度</h3><p>Step 3–4 才能控制良好（低至中劑量 ICS + LABA 等）</p></div>
+    <div class="def-card dc-red"><h3>重度</h3><p>Step 4–5 仍控制不佳；或降低高劑量治療即惡化（見重症氣喘定義）</p></div>
+  </div>
+
+  <div class="sec-label">氣喘緩解（remission）概念</div>
+  <div class="card">
+    <p style="font-size:13px;margin-bottom:6px"><strong>臨床緩解（on treatment）</strong>定義通常包含：長期無氣喘症狀與惡化、不使用 OCS、肺功能穩定或改善。</p>
+    <ul class="cl">
+      <li>與生物製劑治療相關研究中日益受重視（biologic therapy → clinical remission on treatment）</li>
+      <li>緩解不等於治癒——症狀緩解後仍可能復發（尤其兒童期後進入成年）</li>
+      <li>預測因子：較佳短期症狀控制分數（ACT/ACQ）、較佳基準肺功能、較少共病、較早發病年齡、無/低 maintenance OCS</li>
+      <li>向病人說明時，避免使用癌症/白血病中的「緩解」意涵——應解釋醫學定義</li>
+    </ul>
+  </div>
+
+  <div class="footer">來源：GINA 2025 Strategy Report Box 2-2 (p.37), Section 3 (p.50), 定義 p.35–36, 44</div>
+</div>
+
+<!-- ===== TAB 4: Track 1/2 ===== -->
+<div id="tab-tracks" class="panel">
+  <div class="alert alert-tip" style="margin-bottom:12px"><strong>Track 1 為首選</strong>：以 as-needed low-dose ICS-formoterol 為 reliever，可大幅降低嚴重惡化風險（vs SABA-based），且為更簡單的用藥策略。Track 2 為替代方案（ICS-SABA 或 SABA 為 reliever），適用於 ICS-formoterol 無法取得的情境。</div>
+
+  <div class="track-grid">
+    <div class="track-card tc-pref">
+      <h3>Track 1（首選）<span class="tc-tag tag-pref">Preferred</span></h3>
+      <div class="step-grid">
+        <div class="sg-row"><div class="sg-step">Step 1</div><div class="sg-med">as-needed low-dose ICS-formoterol</div><div class="sg-note">AIR-only（Anti-Inflammatory Reliever only）</div></div>
+        <div class="sg-row"><div class="sg-step">Step 2</div><div class="sg-med">as-needed low-dose ICS-formoterol</div><div class="sg-note">同上；症狀頻繁時考慮加 maintenance</div></div>
+        <div class="sg-row"><div class="sg-step">Step 3</div><div class="sg-med">Low-dose ICS-formoterol maintenance + as-needed ICS-formoterol（MART）</div></div>
+        <div class="sg-row"><div class="sg-step">Step 4</div><div class="sg-med">Medium-dose ICS-formoterol maintenance + as-needed ICS-formoterol（MART）</div></div>
+        <div class="sg-row"><div class="sg-step">Step 5</div><div class="sg-med">Step 4 + add-on biologic 或 high-dose ICS-LABA ± 其他 add-on</div><div class="sg-note">依 T2 phenotype 及 eligibility 決定</div></div>
+      </div>
+    </div>
+    <div class="track-card tc-alt">
+      <h3>Track 2（替代）<span class="tc-tag tag-alt">Alternative</span></h3>
+      <div class="step-grid">
+        <div class="sg-row"><div class="sg-step">Step 1</div><div class="sg-med">as-needed ICS-SABA（budesonide-salbutamol）</div><div class="sg-note">不建議單用 SABA（↑ 惡化/死亡風險）</div></div>
+        <div class="sg-row"><div class="sg-step">Step 2</div><div class="sg-med">Low-dose ICS maintenance + as-needed SABA or ICS-SABA</div></div>
+        <div class="sg-row"><div class="sg-step">Step 3</div><div class="sg-med">Low-dose ICS-LABA maintenance + as-needed SABA or ICS-SABA</div></div>
+        <div class="sg-row"><div class="sg-step">Step 4</div><div class="sg-med">Medium-dose ICS-LABA maintenance + as-needed SABA or ICS-SABA</div><div class="sg-note">2025更新：由 med-to-high 改為 medium-dose</div></div>
+        <div class="sg-row"><div class="sg-step">Step 5</div><div class="sg-med">Step 4 + add-on（biologic、LAMA 等）</div><div class="sg-note">需 high-dose ICS-LABA 時，限制於 3–6 月</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label">初始治療選擇</div>
+  <div class="card">
+    <ul class="cl">
+      <li><strong>有 ICS-formoterol（Track 1）：</strong>首選 as-needed ICS-formoterol（AIR）→ Step 1 起始</li>
+      <li><strong>無 ICS-formoterol：</strong>有症狀者予 low-dose ICS；多數症狀或有惡化史者 → Step 2–3</li>
+      <li>不要以 SABA 單藥作為初始或長期治療</li>
+      <li>立即開始 ICS 的情況：肺功能低（FEV₁ &lt;60% 預測值）、血液 eosinophils ≥300/µL、或其他高惡化風險因素</li>
+    </ul>
+  </div>
+
+  <div class="sec-label">步驟調整（stepping up/down）</div>
+  <div class="card">
+    <ul class="cl">
+      <li><strong>步升前確認：</strong>inhaler technique 正確、adherence 良好、已治療共病、排除其他診斷</li>
+      <li><strong>步降（Box 4-13）：</strong>症狀良好控制 ≥3 個月後考慮 → 先停 OCS（如使用）→ 再移除 add-on → 再降低 ICS 劑量；<strong>不要完全停止 ICS</strong></li>
+      <li>步降為試驗性療程——症狀惡化時應回復原劑量並重新評估</li>
+    </ul>
+  </div>
+
+  <div class="sec-label">MART 使用注意</div>
+  <div class="card">
+    <ul class="cl">
+      <li>適用 ICS（beclometasone 或 budesonide）+ formoterol 之組合，非 salmeterol</li>
+      <li>成人/青少年最大總日劑量：budesonide-formoterol 以 formoterol 計算 ≤ 72 mcg metered（54 mcg delivered）</li>
+      <li>兒童 6–11 歲：最大總日劑量 formoterol ≤ 48 mcg metered（36 mcg delivered）</li>
+      <li>MART 不適用 ICS-SABA（budesonide-salbutamol）</li>
+    </ul>
+  </div>
+
+  <div class="footer">來源：GINA 2025 Strategy Report Box 4-3 (p.74), Box 4-6 (p.77), Box 4-7 (p.78), Box 4-9 (p.86), Box 4-13 (p.102), What's New p.20</div>
+</div>
+
+<!-- ===== TAB 5: 重症決策路徑 ===== -->
+<div id="tab-severe" class="panel">
+  <div class="alert alert-info" style="margin-bottom:12px">任何階段皆可轉介專科/重症氣喘門診。三大階段：Phase 1（綠色，GP 或專科）→ Phase 2（藍色，專科）→ Phase 3（棕色，合作追蹤）。</div>
+
+  <div class="sec-label" style="color:var(--green)">Phase 1 — GP 或專科（Steps 1–4）</div>
+  <div class="steps">
+    <div class="step-card sc-green" onclick="toggleStep(this)">
+      <div class="step-head">
+        <div class="step-num">1</div>
+        <div class="step-title">確認診斷（氣喘或鑑別診斷）</div>
+        <span class="step-badge">鑑別診斷</span>
+        <span class="step-chevron">▾</span>
+      </div>
+      <div class="step-body">
+        <p style="font-size:12px;margin-bottom:8px">12–50% 被認為是重症氣喘的患者，診斷並非氣喘。</p>
+        <div class="sub-h">依症狀鑑別</div>
+        <ul class="cl">
+          <li><strong>呼吸困難：</strong>COPD、肥胖、心臟病、去適應</li>
+          <li><strong>咳嗽：</strong>ILO/VCD、上呼吸道咳嗽症候群（post-nasal drip）、GERD、支氣管擴張、ACE 抑制劑</li>
+          <li><strong>喘鳴：</strong>肥胖、COPD、tracheobronchomalacia、VCD</li>
+        </ul>
+        <div class="sub-h">確認氣喘診斷</div>
+        <ul class="cl">
+          <li>肺功能檢查（支氣管擴張前後）：FEV₁ 增加 ≥200 mL 且 ≥12% 支持診斷</li>
+          <li>若初次陰性：暫停 bronchodilator 後重測（SABA ≥6h；LABA 最多 2 天）</li>
+          <li>若無肺功能：PEF 支氣管擴張前後；增加 ≥20% 支持診斷</li>
+          <li>檢查完整 flow-volume curve 評估上呼吸道阻塞</li>
+        </ul>
+        <div class="sub-h">轉介專科指標</div>
+        <ul class="cl">
+          <li>診斷確認困難；頻繁緊急就醫；需頻繁/maintenance OCS</li>
+          <li>懷疑職業性氣喘；確認食物過敏/過敏性休克史（死亡風險↑）</li>
+          <li>症狀提示感染性/心臟性原因、支氣管擴張、或多重共病</li>
+        </ul>
+        <div class="cite">GINA 2025 Severe Guide p.14; Strategy Report Box 1-3, 1-4</div>
+      </div>
+    </div>
+
+    <div class="step-card sc-green" onclick="toggleStep(this)">
+      <div class="step-head">
+        <div class="step-num">2</div>
+        <div class="step-title">尋找影響因素</div>
+        <span class="step-badge">可修正因素</span>
+        <span class="step-chevron">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="cl">
+          <li><strong>Inhaler technique 錯誤</strong>——高達 80% 患者；請患者示範操作，與 checklist 或影片對照</li>
+          <li><strong>依從性不佳</strong>——高達 75%；同理心詢問用藥頻率；FeNO 抑制試驗（1週高劑量 ICS 後 FeNO 下降）可識別</li>
+          <li><strong>共病：</strong>焦慮/憂鬱、肥胖、去適應、慢性鼻竇炎、ILO、GERD、COPD、OSA、支氣管擴張、心臟病、骨質疏鬆</li>
+          <li><strong>可修正觸發因素：</strong>吸菸、電子菸、環境菸、家中/職場過敏原（如已致敏）、室內外空汙、藥物（beta-blockers、NSAIDs）</li>
+          <li><strong>SABA 規律使用或過度使用：</strong>≥3罐/年 → 急診/住院風險↑；≥12罐/年 → 顯著死亡風險↑（霧化 SABA 風險更高）</li>
+          <li><strong>焦慮、憂鬱、社會/經濟困難</strong>——重症氣喘中非常普遍，影響 QoL 與依從性</li>
+          <li><strong>藥物副作用：</strong>OCS 全身效應；高劑量 ICS 聲音嘶啞/黴菌感染；P450 抑制劑（itraconazole）→ 腎上腺抑制風險</li>
+        </ul>
+        <div class="cite">GINA 2025 Severe Guide p.15; SABA 過度使用：Nwaru et al, Eur Respir J 2020;55:1901872</div>
+      </div>
+    </div>
+
+    <div class="step-card sc-green" onclick="toggleStep(this)">
+      <div class="step-head">
+        <div class="step-num">3</div>
+        <div class="step-title">審視並最佳化治療</div>
+        <span class="step-badge">治療最佳化</span>
+        <span class="step-chevron">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="cl">
+          <li>提供氣喘自我管理教育 + 個人化書面/電子行動計畫</li>
+          <li>每次門診確認 inhaler technique（示範 + teach-back）；電子吸入器監控可改善 adherence</li>
+          <li>改用 ICS-formoterol MART（如可取得）——降低惡化風險</li>
+          <li><strong>非藥物策略：</strong>戒菸、規律運動、健康飲食、減重、黏液清除、肺復健（限制運動耐受/持續氣流受限者）、呼吸訓練、過敏原迴避（如已致敏且有證據）、減少呼吸道病毒暴露</li>
+          <li><strong>疫苗：</strong>每年流感疫苗、肺炎鏈球菌、百日咳、RSV、COVID-19——依當地接種建議</li>
+          <li>治療共病（注意：無症狀 GERD 不需常規治療）；CRSwNP 生物製劑（anti-IL4Rα、anti-IL5/5Rα）可同時改善鼻竇炎與氣喘結果</li>
+          <li>避免惡化氣喘的藥物（beta-blockers 含眼藥水；NSAIDs in AERD patients）</li>
+          <li>考慮試用非生物製劑 add-on：LAMA、LTRA（注意 montelukast 神經精神副作用—FDA 黑框警語）</li>
+          <li>考慮 3–6 個月高劑量 ICS-LABA 試驗（若目前未使用）</li>
+        </ul>
+        <div class="cite">GINA 2025 Severe Guide p.16; Strategy Report Section 3, Box 3-6, p.106</div>
+      </div>
+    </div>
+
+    <div class="step-card sc-green" onclick="toggleStep(this)">
+      <div class="step-head">
+        <div class="step-num">4</div>
+        <div class="step-title">~3–6 個月後回診評估</div>
+        <span class="step-badge">決策點</span>
+        <span class="step-chevron">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="sub-h">評估項目</div>
+        <ul class="cl">
+          <li>症狀控制（頻率、SABA 使用量、夜間清醒、活動限制）</li>
+          <li>自上次門診以來的惡化及處理情況</li>
+          <li>藥物副作用；Inhaler technique 與依從性；肺功能；病人滿意度</li>
+        </ul>
+        <div class="divider"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div class="alert alert-warn" style="margin:0">
+            <strong>仍控制不佳 →</strong><br>可能為重症氣喘。轉介專科/重症氣喘門診。
+          </div>
+          <div class="alert alert-tip" style="margin:0">
+            <strong>控制良好 →</strong><br>考慮步降。先停/減 OCS（查腎上腺功能）→ 移除 add-on → 降低 ICS 劑量。<strong>不停 ICS。</strong>
+          </div>
+        </div>
+        <div class="alert alert-warn" style="margin-top:8px">步降後症狀控制不佳或惡化 → 恢復原劑量 → 重症氣喘診斷確立 → 轉介專科（如尚未）。</div>
+        <div class="cite">GINA 2025 Severe Guide p.16–17; Strategy Report Box 4-13</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label" style="color:var(--blue);margin-top:16px">Phase 2 — 專科醫師（Steps 5–8）</div>
+  <div class="steps">
+    <div class="step-card sc-blue" onclick="toggleStep(this)">
+      <div class="step-head">
+        <div class="step-num">5</div>
+        <div class="step-title">進一步檢查與病人支持</div>
+        <span class="step-badge">專科</span>
+        <span class="step-chevron">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="sub-h">專科層級的額外檢查（依臨床懷疑）</div>
+        <ul class="cl">
+          <li>CXR 或 HRCT 胸部（如尚未執行）</li>
+          <li>過敏測試：skin prick test 或 specific IgE（如尚未執行）</li>
+          <li>其他氣道/肺部：AERD、CRSwNP、ILO、OSA、ABPA、支氣管擴張、tracheobronchomalacia、TB、MAC</li>
+          <li>骨密度（DEXA）——OCS/高劑量 ICS → 骨質疏鬆風險</li>
+          <li>晨間血清 cortisol（腎上腺功能不足）</li>
+          <li>其他：GERD、心衰竭、肺栓塞、焦慮/憂鬱</li>
+        </ul>
+        <div class="alert alert-warn">
+          血液 eosinophils ≥300/µL → 先尋找並治療寄生蟲感染（Strongyloides serology 或糞便檢查）再使用 OCS 或生物製劑——有播散性感染風險。<br>
+          血液 eosinophils ≥1500/µL → 考慮 EGPA。
+        </div>
+        <div class="sub-h">病人支持</div>
+        <ul class="cl">
+          <li>轉介支持服務（情緒、社會、財務負擔）；考慮心理/精神科轉介</li>
+          <li>多學科團隊照護（可提升共病識別率與結果）</li>
+          <li>邀請加入登錄資料庫（如有）或臨床試驗</li>
+        </ul>
+        <div class="cite">GINA 2025 Severe Guide p.18</div>
+      </div>
+    </div>
+
+    <div class="step-card sc-blue" onclick="toggleStep(this)">
+      <div class="step-head">
+        <div class="step-num">6</div>
+        <div class="step-title">評估重症氣喘表型——有無 Type 2？</div>
+        <span class="step-badge">表型評估</span>
+        <span class="step-chevron">▾</span>
+      </div>
+      <div class="step-body">
+        <p style="font-size:12px;margin-bottom:8px">大多數重症氣喘有 Type 2 發炎。特徵：IL-4、IL-5、IL-13（過敏原刺激適應性免疫）或 IL-33、IL-25、TSLP（病毒/細菌/刺激物刺激上皮細胞）。</p>
+        <div style="background:var(--blue-bg);border:0.5px solid var(--blue-border);border-radius:var(--radius-lg);padding:12px 14px;margin:8px 0">
+          <div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:8px">T2-high 篩查 biomarkers（使用高劑量 ICS 或 OCS 期間）</div>
+          <table class="bm-table">
+            <thead><tr><th>Biomarker</th><th>閾值（篩查用）</th><th>注意事項</th></tr></thead>
+            <tbody>
+              <tr><td>血液 eosinophils</td><td>≥150/µL</td><td>晨間較高；OCS 後下降</td></tr>
+              <tr><td>FeNO</td><td>≥20 ppb</td><td>下午較高；吸菸者較低；OCS 後下降</td></tr>
+              <tr><td>Sputum eosinophils</td><td>≥2%</td><td>需誘導痰（不常規執行）</td></tr>
+              <tr><td>臨床表現</td><td>臨床上過敏原誘發氣喘</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="alert alert-warn">以上為<strong>初步篩查標準</strong>——非生物製劑療法資格標準（見 Step 8 及當地健保規定）。</div>
+        <div class="alert alert-info">OCS 會抑制 eosinophils、sputum eos 及 FeNO。應在 OCS 開始前，或停用後 ≥1–2 週，或在最低 OCS 劑量時測量。可重複測量最多 3 次；停 OCS 甚至 2 天，eosinophil 即可能回升至資格閾值。</div>
+        <div class="cite">GINA 2025 Severe Guide p.19; Lugogo et al, Ann Allergy Asthma Immunol 2020;125:171; Biener et al, Pneumologie 2023;77:357</div>
+      </div>
+    </div>
+
+    <div class="step-card sc-blue" onclick="toggleStep(this)">
+      <div class="step-head">
+        <div class="step-num">7</div>
+        <div class="step-title">生物製劑前的其他治療選擇</div>
+        <span class="step-badge">非生物製劑</span>
+        <span class="step-chevron">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="sub-h">7.1 無 T2 發炎證據</div>
+        <ul class="cl">
+          <li>重新檢視基礎（step 2）：鑑別診斷、inhaler technique、adherence、共病、副作用</li>
+          <li>迴避暴露（菸草、空汙、過敏原（已致敏且有迴避效益）、刺激物）</li>
+          <li>考慮：誘導痰、HRCT、支氣管鏡（排除罕見共病/其他診斷）</li>
+          <li>試用 add-on：LAMA；low-dose azithromycin（成人，先確認痰液無 MAC、ECG 排除長 QTc，1個月後複查 ECG；注意抗生素抗藥性）</li>
+          <li>Anti-IL4Rα（若使用 maintenance OCS）；anti-TSLP（OCS 依賴者證據不足）</li>
+          <li>支氣管熱成形術（bronchial thermoplasty）+ 登錄資料庫（長期安全性與效果證據有限）</li>
+          <li>最後手段：add-on low-dose OCS（最小化副作用策略）</li>
+          <li>停止無效 add-on；若臨床情境改變（如停用 OCS），重新測量 T2 biomarkers</li>
+        </ul>
+        <div class="divider"></div>
+        <div class="sub-h">7.2 有 T2 發炎——先考慮非生物製劑（因生物製劑費用高）</div>
+        <ul class="cl">
+          <li>客觀評估 adherence：處方/領藥記錄、血液 prednisone 濃度、電子吸入器監控；FeNO 抑制試驗（5天直接觀察高劑量 ICS → FeNO 下降代表過去依從性差）</li>
+          <li>考慮增加 ICS 劑量 3–6 個月後再評估</li>
+          <li>特定 T2 表型的 add-on：AERD（LTRA ± aspirin desensitisation）；ABPA（OCS ± 抗黴菌劑）；CRSwNP（加強鼻內類固醇 ± 手術）；異位性皮膚炎（局部類固醇/非類固醇）</li>
+          <li>若 T2 targeted biologic 無法取得：高劑量 ICS-LABA；add-on LAMA/LTRA/azithromycin；最後手段：低劑量 OCS</li>
+        </ul>
+        <div class="cite">GINA 2025 Severe Guide p.20–21</div>
+      </div>
+    </div>
+
+    <div class="step-card sc-blue" onclick="toggleStep(this)">
+      <div class="step-head">
+        <div class="step-num">8</div>
+        <div class="step-title">考慮 add-on 生物製劑（Type 2 targeted）</div>
+        <span class="step-badge">生物製劑</span>
+        <span class="step-chevron">▾</span>
+      </div>
+      <div class="step-body">
+        <p style="font-size:12px;margin-bottom:8px">適應對象：≥high-dose ICS-LABA 下仍有惡化/症狀控制差 + 過敏性/eosinophilic biomarkers 或 maintenance OCS。先排除/治療寄生蟲感染（eos ≥300/µL 時）。</p>
+        <div class="alert alert-info">選擇考量：當地健保資格標準；T2 共病（異位性皮膚炎、鼻息肉）；過敏原觸發病史；反應預測因子；費用；給藥頻率；給藥途徑（IV vs SC）；病患偏好。<strong>務必確認當地資格標準。</strong></div>
+        <p style="font-size:12px;margin-top:8px"><em>→ 詳見「生物製劑」分頁</em></p>
+        <ul class="cl">
+          <li>初始試驗：至少 4 個月；不確定時延長至 6–12 個月</li>
+          <li>無反應：停用生物製劑，考慮換用不同 T2 targeted 生物製劑（如符合資格）</li>
+          <li>請勿在同一天給予生物製劑及疫苗接種（以便區分副作用）</li>
+          <li>注射前讓冷藏注射器/自動注射筆回溫至室溫（可降低注射疼痛）</li>
+        </ul>
+        <div class="cite">GINA 2025 Severe Guide p.21–25</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label" style="color:var(--brown);margin-top:16px">Phase 3 — 專科與基層醫療合作（Steps 9–10）</div>
+  <div class="steps">
+    <div class="step-card sc-brown" onclick="toggleStep(this)">
+      <div class="step-head">
+        <div class="step-num">9</div>
+        <div class="step-title">評估治療反應</div>
+        <span class="step-badge">追蹤</span>
+        <span class="step-chevron">▾</span>
+      </div>
+      <div class="step-body">
+        <p style="font-size:12px;margin-bottom:8px">生物製劑開始後 3–4 個月評估，之後每 3–6 個月。評估：症狀控制（ACT 4週；ACQ-5 1週）、惡化次數與嚴重度、OCS 使用情形、T2 共病變化、副作用、費用、病患滿意度。</p>
+        <div class="sub-h">若有良好反應</div>
+        <ul class="cl">
+          <li>每 3–6 個月重新評估每種藥物的需要性</li>
+          <li>優先減少/停 OCS（最重要）→ 監測晨間 cortisol；術前/生病/手術前 6 個月仍需類固醇補充</li>
+          <li>接著減少其他 add-on；<strong>不完全停止 ICS</strong></li>
+          <li>確認穩定後再進行下一步藥物調整</li>
+          <li>生物製劑停藥：通常治療 ≥12 個月才考慮，且需在 medium-dose ICS 下良好控制（過敏性氣喘需無已知觸發過敏原暴露）</li>
+        </ul>
+        <div class="alert alert-warn">RCT 資料（COMET study）：停用 mepolizumab 後 12 個月內，嚴重惡化發生率顯著高於繼續治療組。大多數患者停藥後惡化或控制惡化。</div>
+        <div class="sub-h" style="margin-top:8px">若無良好反應</div>
+        <ul class="cl">
+          <li>停用生物製劑；重新審視基礎（Step 2）：鑑別診斷、inhaler technique、adherence、共病、副作用</li>
+          <li>考慮 HRCT（如尚未）；誘導痰；支氣管鏡；重新評估表型</li>
+          <li>考慮：low-dose azithromycin（成人）；bronchial thermoplasty + 登錄資料庫；最後手段：低劑量 maintenance OCS</li>
+          <li>停止無效 add-on；<strong>不停 ICS</strong></li>
+        </ul>
+        <div class="cite">GINA 2025 Severe Guide p.26–27; Moore et al, Eur Respir J 2022;59:2100396</div>
+      </div>
+    </div>
+
+    <div class="step-card sc-brown" onclick="toggleStep(this)">
+      <div class="step-head">
+        <div class="step-num">10</div>
+        <div class="step-title">持續合作優化照護</div>
+        <span class="step-badge">持續追蹤</span>
+        <span class="step-chevron">▾</span>
+      </div>
+      <div class="step-body">
+        <ul class="cl">
+          <li>每 3–6 個月：臨床氣喘指標（症狀控制、惡化、肺功能）、共病、惡化風險因素、藥物（inhaler technique、adherence、add-on 需要性、OCS 副作用）、社會/情緒需求</li>
+          <li>雙向溝通：回診結果、病患疑慮、惡化行動計畫、藥物變更與副作用、緊急聯絡事宜</li>
+          <li>評估頻率與地點（基層 vs 專科）取決於控制狀況、風險因素、自我管理信心及當地規範</li>
+        </ul>
+        <div class="cite">GINA 2025 Severe Guide p.27</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 6: T2 表型 ===== -->
+<div id="tab-t2" class="panel">
+  <div class="alert alert-info" style="margin-bottom:12px">在高劑量 ICS 下評估 T2 表型的原因：(1) 大多數 T2 生物製劑 RCT 均在此族群進行；(2) 依從性差/inhaler technique 錯誤是 T2 發炎未控制的常見原因；(3) 若 ICS 正確使用即有反應，因生物製劑高費用不宜廣泛使用。</div>
+
+  <div class="sec-label">T2 發炎篩查標準（高劑量 ICS 或 OCS 期間）</div>
+  <div class="card">
+    <table class="bm-table">
+      <thead><tr><th>Biomarker</th><th>篩查閾值</th><th>OCS 影響</th><th>注意事項</th></tr></thead>
+      <tbody>
+        <tr><td>血液 eosinophils</td><td>≥150/µL</td><td>OCS 後顯著下降</td><td>早上較高；晝夜變動明顯；肥胖↓；過敏原暴露（已致敏）↑</td></tr>
+        <tr><td>FeNO</td><td>≥20 ppb</td><td>OCS 後下降</td><td>下午較高；吸菸↓；支氣管收縮時↓；病毒感染時可↑或↓；需依 GLI 參考值</td></tr>
+        <tr><td>Sputum eosinophils</td><td>≥2%</td><td>OCS 後下降</td><td>非常規检查；需誘導痰</td></tr>
+        <tr><td>臨床表現</td><td>臨床上過敏原誘發</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert alert-warn">上述為篩查標準，非生物製劑資格標準。各藥物的資格閾值不同（見「生物製劑」分頁），請務必查詢當地健保規範。</div>
+
+  <div class="sec-label">測量注意事項</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div class="card-sm">
+      <div class="sub-h" style="margin-top:0">OCS 對 biomarker 的影響</div>
+      <p style="font-size:12px">OCS 顯著抑制血液 eosinophils、sputum eosinophils 及 FeNO。應在：<br>• OCS 開始前，或<br>• 療程結束後至少 1–2 週，或<br>• 在最低可能的 OCS 劑量下測量<br>甚至停 OCS 2 天，eosinophil 即可能回升至資格閾值。</p>
+    </div>
+    <div class="card-sm">
+      <div class="sub-h" style="margin-top:0">單次低值不能排除 T2</div>
+      <p style="font-size:12px">建議可重複測量最多 3 次（惡化時、OCS 前、OCS 後 1–2 週）。65% 患者在 48–56 週內 eosinophil 類別有轉變。有波動性 eosinophil 者惡化率與持續高值者相似。</p>
+    </div>
+    <div class="card-sm">
+      <div class="sub-h" style="margin-top:0">影響 eosinophil 的因素</div>
+      <p style="font-size:12px">年齡、性別、一天中的時間（早上較高）、地理位置、肥胖（降低）、已致敏者過敏原暴露（升高）、寄生蟲感染、類固醇使用</p>
+    </div>
+    <div class="card-sm">
+      <div class="sub-h" style="margin-top:0">影響 FeNO 的因素</div>
+      <p style="font-size:12px">一天中的時間（下午較高）、性別、年齡、FeNO 儀器、測量地點、吸菸（降低）、支氣管收縮（降低）、病毒感染（可升可降）；需使用 GLI 參考值（Högman et al, ERS Tech Standard 2024）</p>
+    </div>
+  </div>
+
+  <div class="sec-label">T2 表型處理路徑</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="def-card dc-blue">
+      <h3>T2-high 重症氣喘</h3>
+      <p style="margin-top:5px">→ 客觀評估 adherence（FeNO 抑制試驗等）<br>→ 增加 ICS 劑量 3–6 個月<br>→ 特定 T2 表型 add-on（AERD、ABPA、CRSwNP、異位性皮膚炎）<br>→ 若 T2 biologic 可取得：進行 Step 8 評估<br>→ 若不可取得：高劑量 ICS-LABA；add-on（LAMA、LTRA、azithromycin）；最後手段：低劑量 OCS</p>
+    </div>
+    <div class="card-sm" style="border-color:var(--border2)">
+      <h3 style="font-size:13px;font-weight:600;margin-bottom:5px">無 T2 發炎的重症氣喘</h3>
+      <p style="font-size:12px;color:var(--text2)">→ 重新審視基礎（Step 2）<br>→ 迴避暴露<br>→ 考慮誘導痰、HRCT、支氣管鏡<br>→ 試用 add-on：LAMA；low-dose azithromycin；anti-IL4Rα（若 OCS 依賴）；anti-TSLP（OCS 依賴者證據不足）<br>→ Bronchial thermoplasty + 登錄<br>→ 最後手段：OCS；停無效療法<br>→ 臨床情境改變時重新測量 T2 biomarkers</p>
+    </div>
+  </div>
+
+  <div class="footer" style="margin-top:16px">來源：GINA 2025 Severe Guide p.19–21; Strategy Report Appendix A p.217; Lugogo et al 2020; Bleecker et al 2023; Biener et al 2023; Högman et al ERS Tech Standard 2024</div>
+</div>
+
+<!-- ===== TAB 7: 生物製劑 ===== -->
+<div id="tab-biologics" class="panel">
+  <div class="alert alert-info" style="margin-bottom:12px">所有生物製劑均需確認當地健保資格標準（可能與下列條件不同）。GINA 建議僅在重症氣喘且治療已充分最佳化後才使用。初始試驗期至少 4 個月。目前迫切需要不同生物製劑的頭對頭比較研究。</div>
+
+  <div class="sec-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="bio-card">
+      <h3>Anti-IgE — omalizumab</h3>
+      <div class="bio-drug">Omalizumab（≥6 歲）</div>
+      <div class="bio-row"><span class="bio-lbl">機轉</span><span class="bio-val">與游離 IgE 的 Fc 端結合 → 降低游離 IgE、下調 FcεR1 受體表達</span></div>
+      <div class="bio-row"><span class="bio-lbl">給藥</span><span class="bio-val">SC 每 2–4 週；依體重+血清 IgE 決定劑量；可自行注射</span></div>
+      <div class="bio-row"><span class="bio-lbl">資格</span><span class="bio-val">吸入性過敏原致敏（skin prick or specific IgE）+ 總 IgE 及體重在劑量範圍內 + 過去一年有惡化</span></div>
+      <div class="bio-row"><span class="bio-lbl">療效</span><span class="bio-val">RCT meta-analysis：嚴重惡化↓44%、QoL 改善。觀察性 meta：惡化率↓59%、maintenance OCS 使用率↓41%</span></div>
+      <div class="bio-row"><span class="bio-lbl">其他適應</span><span class="bio-val">鼻息肉、慢性自發性蕁麻疹、IgE 媒介食物過敏</span></div>
+      <div class="bio-row"><span class="bio-lbl">副作用</span><span class="bio-val">注射部位反應；過敏性休克 ~0.2%；含 polysorbate 可能引起過敏</span></div>
+      <div class="bio-row"><span class="bio-lbl">良好反應<br>預測因子</span><span class="bio-val">
+        <span class="ptag pt-mod">血液 eos ≥260/µL（++）</span>
+        <span class="ptag pt-mod">FeNO ≥20 ppb（+）</span>
+        <span class="ptag pt-mod">過敏原誘發症狀（+）</span>
+        <span class="ptag pt-mod">童年發病（+）</span><br>
+        <small style="color:var(--text3)">注意：基準 IgE 水平<strong>不預測</strong>反應；低或高 eosinophil/FeNO 均可能有效（觀察性研究）</small>
+      </span></div>
+      <div class="cite">GINA 2025 Severe Guide p.22; Agache et al, Allergy 2020;75:1043; Bousquet et al, JACI Pract 2021;9:2702</div>
+    </div>
+
+    <div class="bio-card">
+      <h3>Anti-IL5 / Anti-IL5Rα</h3>
+      <div class="bio-drug">Mepolizumab（≥6 歲）; Benralizumab（≥12 歲）; Reslizumab（≥18 歲）</div>
+      <div class="bio-row"><span class="bio-lbl">機轉</span><span class="bio-val">Mepolizumab/reslizumab：與循環 IL-5 結合。Benralizumab：與 IL-5Rα 結合 → eosinophil 凋亡（benralizumab 幾乎完全清除 eosinophil）</span></div>
+      <div class="bio-row"><span class="bio-lbl">給藥</span><span class="bio-val">Mepolizumab：成人 100 mg SC q4w；6–11歲 40 mg SC q4w。Benralizumab：30 mg SC q4w × 3劑→ q8w。Reslizumab：3 mg/kg IV q4w</span></div>
+      <div class="bio-row"><span class="bio-lbl">資格</span><span class="bio-val">過去一年嚴重惡化 + 血液 eos ≥150 或 ≥300/µL（視產品/健保而定；OCS 使用者有不同閾值）</span></div>
+      <div class="bio-row"><span class="bio-lbl">療效</span><span class="bio-val">RCT meta-analysis：嚴重惡化↓47–54%；OCS 劑量（mepolizumab、benralizumab 均可）↓~50%；mepolizumab QoL 有臨床意義改善</span></div>
+      <div class="bio-row"><span class="bio-lbl">其他適應</span><span class="bio-val">Mepolizumab + benralizumab：EGPA；Mepolizumab：hypereosinophilic syndrome、CRSwNP</span></div>
+      <div class="bio-row"><span class="bio-lbl">副作用</span><span class="bio-val">注射部位反應、頭痛；過敏性休克罕見。兒童（mepolizumab）：皮膚/神經系統事件較多</span></div>
+      <div class="bio-row"><span class="bio-lbl">良好反應<br>預測因子</span><span class="bio-val">
+        <span class="ptag pt-strong">較高血液 eos（+++）</span>
+        <span class="ptag pt-strong">較多惡化次數（+++）</span>
+        <span class="ptag pt-mod">成人發病（++）</span>
+        <span class="ptag pt-mod">鼻息肉（++）</span>
+        <span class="ptag pt-mod">Maintenance OCS 基準</span>
+        <span class="ptag pt-mod">FEV₁ &lt;65% 預測值</span>
+      </span></div>
+      <div class="cite">GINA 2025 Severe Guide p.23; Agache et al, Allergy 2020;75:1023; Ortega et al, Lancet Respir Med 2016;4:549</div>
+    </div>
+
+    <div class="bio-card">
+      <h3>Anti-IL4Rα — dupilumab</h3>
+      <div class="bio-drug">Dupilumab（≥12 歲成人；≥6 歲 eosinophilic/T2）</div>
+      <div class="bio-row"><span class="bio-lbl">機轉</span><span class="bio-val">與 IL-4 受體 alpha 結合 → 同時阻斷 IL-4 和 IL-13 訊號傳導</span></div>
+      <div class="bio-row"><span class="bio-lbl">給藥</span><span class="bio-val">成人 200 mg 或 300 mg SC q2w（重症 eosinophilic/T2）；OCS 依賴/合併中重度 AD/CRSwNP 者 300 mg SC q2w；6–11 歲依體重決定劑量。可自行注射</span></div>
+      <div class="bio-row"><span class="bio-lbl">資格</span><span class="bio-val">過去一年惡化 + 血液 eos ≥150 且 ≤1500/µL 或 FeNO ≥25 ppb；或 maintenance OCS（無最低 eos/FeNO 要求）</span></div>
+      <div class="bio-row"><span class="bio-lbl">療效</span><span class="bio-val">RCT meta-analysis：嚴重惡化↓56%；OCS 依賴者中位數 OCS 劑量↓50%（持續 2 年）；6–11 歲降低惡化、提升肺功能</span></div>
+      <div class="bio-row"><span class="bio-lbl">其他適應</span><span class="bio-val">中重度異位性皮膚炎；CRSwNP；COPD + 慢性支氣管炎 + 高 eos；eosinophilic esophagitis</span></div>
+      <div class="bio-row"><span class="bio-lbl">副作用</span><span class="bio-val">注射部位反應；短暫血液 eosinophilia（4–13%）；停 OCS 後可能揭露 EGPA。基準/歷史 eos &gt;1500/µL 者<strong>不建議</strong>使用（Phase III 試驗排除此族群）</span></div>
+      <div class="bio-row"><span class="bio-lbl">良好反應<br>預測因子</span><span class="bio-val">
+        <span class="ptag pt-strong">較高血液 eos（+++）</span>
+        <span class="ptag pt-strong">較高 FeNO（+++）</span>
+        <small style="color:var(--text3)">（兩者均具強預測力，包括兒童）</small>
+      </span></div>
+      <div class="cite">GINA 2025 Severe Guide p.24; Agache et al, Allergy 2020;75:1058; Castro et al, NEJM 2018;378:2486</div>
+    </div>
+
+    <div class="bio-card">
+      <h3>Anti-TSLP — tezepelumab</h3>
+      <div class="bio-drug">Tezepelumab（≥12 歲）</div>
+      <div class="bio-row"><span class="bio-lbl">機轉</span><span class="bio-val">與循環 TSLP 結合——支氣管上皮細胞衍生的 alarmin，牽涉多種氣喘下游病理機制</span></div>
+      <div class="bio-row"><span class="bio-lbl">給藥</span><span class="bio-val">210 mg SC q4w；可自行注射</span></div>
+      <div class="bio-row"><span class="bio-lbl">資格</span><span class="bio-val">過去一年嚴重惡化（視健保規定）。可考慮用於<strong>無 T2 biomarker 升高</strong>者（Step 7.1）——最廣泛的適用族群</span></div>
+      <div class="bio-row"><span class="bio-lbl">療效</span><span class="bio-val">兩項 RCT：嚴重惡化↓30–70%；改善 QoL、肺功能、症狀控制，不受過敏狀態影響。較高基準 eos/FeNO → 更好臨床結果。注意：OCS 依賴者中無顯著 OCS 劑量減少（vs placebo）</span></div>
+      <div class="bio-row"><span class="bio-lbl">副作用</span><span class="bio-val">注射部位反應；過敏性休克罕見；安全性報告最長 2 年</span></div>
+      <div class="bio-row"><span class="bio-lbl">良好反應<br>預測因子</span><span class="bio-val">
+        <span class="ptag pt-strong">較高血液 eos（+++）</span>
+        <span class="ptag pt-strong">較高 FeNO（+++）</span>
+      </span></div>
+      <div class="cite">GINA 2025 Severe Guide p.24–25; Menzies-Gow et al, NEJM 2021;384:1800; Wechsler et al, Lancet Respir Med 2022;10:650</div>
+    </div>
+  </div>
+
+  <div class="sec-label">生物製劑實用注意事項</div>
+  <div class="card">
+    <ul class="cl">
+      <li>第一劑不應與疫苗同日施打（以便區分副作用）</li>
+      <li>冷藏注射器/自動注射筆注射前先回溫至室溫（減少疼痛）</li>
+      <li>Eos ≥300/µL 時，先篩查並治療寄生蟲（尤其 Strongyloides）再開始治療</li>
+      <li>停藥：通常需 ≥12 個月良好反應後才考慮，且需在 medium-dose ICS 下維持控制</li>
+      <li>緊急需要：不同生物製劑之間的頭對頭比較研究</li>
+    </ul>
+  </div>
+
+  <div class="footer">來源：GINA Severe Asthma Guide V6.0, July 2025, p.21–25. 療效數據來自 RCT meta-analysis（除特別說明外）。當地健保資格標準可能與本文列舉者有顯著差異，使用前務必確認。</div>
+</div>
+
+<!-- ===== TAB 8: 急性惡化 ===== -->
+<div id="tab-exacerbation" class="panel">
+  <div class="alert alert-warn" style="margin-bottom:12px"><strong>2025 更新：Nebulized magnesium 已不再建議（成人與兒童均適用）。</strong>Intravenous magnesium 有更多中重度惡化的證據支持。初始 SABA 劑量已澄清，避免過度使用。</div>
+
+  <div class="sec-label">惡化嚴重度快速評估</div>
+  <div style="overflow-x:auto">
+  <table class="sev-table">
+    <thead><tr><th>嚴重度</th><th>症狀/外觀</th><th>呼吸速率</th><th>SpO₂（room air）</th><th>FEV₁ 或 PEF（預測%）</th></tr></thead>
+    <tbody>
+      <tr class="sev-mild"><td>輕度</td><td>可說完整句子；可平躺；不煩躁</td><td>增加</td><td>≥95%</td><td>&gt;70%</td></tr>
+      <tr class="sev-mod"><td>中度</td><td>只能說片語；喜坐位；有些煩躁</td><td>增加</td><td>90–95%</td><td>40–69%</td></tr>
+      <tr class="sev-sev"><td>重度</td><td>只能說單字；前傾坐位；煩躁</td><td>&gt;30/min</td><td>&lt;90%</td><td>&lt;40%</td></tr>
+      <tr class="sev-life"><td>生命威脅</td><td>意識障礙、緘默胸（silent chest）、發紺</td><td>—</td><td>&lt;90%</td><td>&lt;25%</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="sec-label">死亡高風險因素（Box 9-1）</div>
+  <div class="alert alert-warn">
+    以下任何因素 → 立即積極治療，密切觀察：<br>
+    過去一年有需住院/急診的嚴重惡化；使用 ≥3 罐/年 SABA；目前或近期停用 ICS；過去使用過 OCS（代表高嚴重度）；食物過敏；心理問題或否認疾病嚴重性；依從性差；缺乏書面行動計畫；低社經地位；農村居住；肥胖；心理社會問題
+  </div>
+
+  <div class="sec-label">基層醫療初步處理</div>
+  <div class="def-grid" style="grid-template-columns: 1fr 1fr;">
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">初始治療</div>
+      <ul class="cl">
+        <li><strong>短效 SABA（reliever）：</strong>輕中度：4–8 吸（MDI + spacer）或 2.5 mg nebulisation，每 20 分鐘 1 次 × 1 小時；重度：最多 10 吸（MDI + spacer）每 20 分鐘 1 次（2025 更新：避免過度使用）</li>
+        <li>使用 MDI + spacer（等效或優於 nebulisation）</li>
+        <li><strong>OCS（全身性皮質類固醇）：</strong>輕中度：40–50 mg prednisolone；重度：50 mg；通常 5–7 天</li>
+        <li><strong>Ipratropium：</strong>中重度可加用（降低住院率）</li>
+        <li>✕ Nebulized magnesium：<strong>已不建議（2025 更新）</strong></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">立即轉急診指標</div>
+      <ul class="cl">
+        <li>嚴重惡化（不能說完整句子；呼吸頻率 &gt;30/min；SpO₂ &lt;90%；心率 &gt;120/min）</li>
+        <li>生命威脅特徵（緘默胸、發紺、意識障礙）</li>
+        <li>初始治療 30–60 分鐘後無改善</li>
+        <li>診斷不確定；有高死亡風險因素</li>
+        <li>家庭/社區資源不足</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sec-label">急診/住院處理</div>
+  <div class="card">
+    <ul class="cl">
+      <li><strong>氧氣：</strong>維持 SpO₂ 93–95%（成人/青少年/兒童 6–11 歲）；兒童目標 ≥94%（2025 更新）；注意膚色影響與高海拔調整</li>
+      <li><strong>SABA：</strong>吸入性 SABA 持續或間歇性給藥（MDI+spacer 等效或優於 nebulisation）；重度者第一小時可接近持續性給藥</li>
+      <li><strong>Ipratropium：</strong>加用 + SABA（降低住院率）</li>
+      <li><strong>全身性皮質類固醇：</strong>盡早給予（目標 1 小時內）；口服優於靜脈（效果相當）；成人 40–50 mg prednisolone（5–7 天）；OCS 超過 2 週需逐步停藥</li>
+      <li><strong>IV magnesium sulfate（硫酸鎂）：</strong>中重度（FEV₁ 25–50% 預測值、初始治療後仍嚴重）→ 考慮單次 IV 2 g（20–30 分鐘）；2025 更新：有更多支持中重度惡化使用的證據</li>
+      <li><strong>Heliox（氦氧混合氣）：</strong>部分重症考慮使用</li>
+      <li><strong>不建議：</strong>抗生素（除非細菌感染明確證據）；鎮靜劑；物理治療；nebulized magnesium（2025 更新移除）</li>
+    </ul>
+  </div>
+
+  <div class="sec-label">自我管理行動計畫（Written Asthma Action Plan）</div>
+  <div class="def-grid" style="grid-template-columns: 1fr 1fr;">
+    <div class="card-sm">
+      <div class="sub-h" style="margin-top:0">Track 1 行動計畫（ICS-formoterol reliever）</div>
+      <p style="font-size:12px;color:var(--text2)">維持日常 maintenance 劑量不變；<strong>增加 as-needed ICS-formoterol 劑量</strong>（一次最多 4 吸）以控制加重中的發炎與支氣管收縮。有強力證據：顯著降低需 OCS 的嚴重惡化及急診風險。</p>
+    </div>
+    <div class="card-sm">
+      <div class="sub-h" style="margin-top:0">Track 2 行動計畫（SABA reliever）</div>
+      <p style="font-size:12px;color:var(--text2)">增加 SABA 緩解症狀；加倍或四倍 maintenance ICS 劑量的證據有限（可能減少惡化進展）。症狀未改善時開始 OCS 並就醫。</p>
+    </div>
+  </div>
+
+  <div class="sec-label">出院後優化</div>
+  <div class="card">
+    <ul class="cl">
+      <li>出院前重新評估 inhaler technique 與 adherence</li>
+      <li>提供或更新書面行動計畫</li>
+      <li>出院前確認有 ICS-containing controller 處方</li>
+      <li>出院後 2–7 天回診（高風險者當天起即安排）</li>
+      <li>考慮此次惡化的原因，調整長期治療（若此次惡化為 step-up 觸發，步升後評估是否可步降）</li>
+      <li>OCS 超過 2 週者：逐步減量（taper）</li>
+    </ul>
+  </div>
+
+  <div class="footer">來源：GINA 2025 Strategy Report Box 9-2 (p.163), Box 9-4 (p.168), Box 9-6 (p.172), Box 9-5 (p.171); 2025 更新 p.21</div>
+</div>
+
+<!-- ===== TAB 9: 藥物速查 ===== -->
+<div id="tab-meds" class="panel">
+  <div class="sec-label">抗炎緩解劑（Anti-Inflammatory Reliever, AIR）</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">ICS-formoterol（Track 1 reliever）</div>
+      <p style="font-size:12px;color:var(--text2)">Beclometasone-formoterol 或 budesonide-formoterol（pMDI 或 DPI）。GINA Track 1 的 anti-inflammatory reliever。輕度氣喘 as-needed 使用：vs SABA alone，急診/住院降低 65%；vs 每日 ICS + as-needed SABA，降低 37%。<br>最大總日劑量（成人/青少年）：formoterol ≤72 mcg metered（54 mcg delivered）。兒童 6–11 歲：≤48 mcg metered（36 mcg delivered）。</p>
+    </div>
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">ICS-SABA（Track 2 替代 reliever）</div>
+      <p style="font-size:12px;color:var(--text2)">Budesonide-salbutamol 或 beclometasone-salbutamol（pMDI/DPI）。在 maintenance ICS 或 ICS-LABA 基礎上，as-needed 使用 2 吸。最大劑量：每日 6 次、每次 2 吸。不可用於 MART。無 as-needed only（Step 1–2）使用的已發表證據。</p>
+    </div>
+  </div>
+
+  <div class="sec-label">維持治療用藥</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">吸入型皮質類固醇（ICS）</div>
+      <p style="font-size:12px;color:var(--text2)">最有效的氣喘抗炎藥物。減少症狀、提升肺功能、降低惡化/住院/死亡風險。低劑量即可達大部分效益。單獨使用 ICS 依從性常差（無即時感受益）。<br><strong>副作用—局部：</strong>口咽黴菌感染、聲音嘶啞（加 spacer + 漱口可降低）。<strong>長期高劑量全身：</strong>骨質疏鬆、白內障、青光眼。P450 抑制劑（ketoconazole、itraconazole、ritonavir、clarithromycin）增加腎上腺抑制風險。</p>
+    </div>
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">ICS-LABA</div>
+      <p style="font-size:12px;color:var(--text2)">加用 LABA 比加倍 ICS 更有效改善症狀/肺功能/惡化。MART（低劑量 ICS-formoterol 維持+緩解）為首選。<strong>LABA 不可在氣喘中單獨使用（未併用 ICS）</strong>——增加嚴重不良結果風險（氣喘+COPD 患者亦同）。P450 抑制劑同樣增加 ICS 腎上腺抑制風險。</p>
+    </div>
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">LAMA（長效 muscarinic 拮抗劑）</div>
+      <p style="font-size:12px;color:var(--text2)">Tiotropium（≥6 歲，mist inhaler）；ICS-LABA-LAMA 複合吸入器（成人 ≥18 歲）。Step 5 add-on（Step 4 次選，證據較弱）。適度改善肺功能；小幅降低惡化；不改善症狀或 QoL。有惡化者：先確認 ICS 至少 medium-dose 再考慮 LAMA。<br>少見副作用：口乾、尿瀦留。</p>
+    </div>
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">LTRA（Leukotriene receptor antagonist）</div>
+      <p style="font-size:12px;color:var(--text2)">Montelukast、pranlukast、zafirlukast、zileuton（錠劑）。單獨使用效果不如低劑量 ICS；與 ICS 併用效果不如 ICS-LABA。有時用於嚴重過敏性氣喘 add-on。<br><strong>⚠️ Montelukast FDA 黑框警語：</strong>嚴重神經精神副作用，包括自殺意念——需與患者/家屬討論。</p>
+    </div>
+  </div>
+
+  <div class="sec-label">短效緩解劑</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">SABA（salbutamol/albuterol、terbutaline）</div>
+      <p style="font-size:12px;color:var(--text2)">快速緩解症狀/支氣管收縮；急性惡化首選。<strong>僅按需使用</strong>（不規律使用）。SABA 單藥治療不建議——vs 任何含 ICS 治療，嚴重惡化/死亡風險更高。<br>副作用：初期震顫/心跳加速；1–2 週規律使用即出現耐藥性（↑氣道反應性、↓支氣管擴張效應、↑發炎）。<br><strong>Fenoterol 不建議</strong>使用（2025 新增：心血管副作用↑，氣喘死亡率↑）。<br>≥12罐/年 → 顯著死亡率上升。</p>
+    </div>
+    <div class="card">
+      <div class="sub-h" style="margin-top:0">SAMA（ipratropium bromide）</div>
+      <p style="font-size:12px;color:var(--text2)">效果不如 SABA；起效慢。短期使用於嚴重急性氣喘——加在 SABA 上可降低住院率。可與 SABA 複方使用。副作用：口乾、苦味。</p>
+    </div>
+  </div>
+
+  <div class="sec-label">口服皮質類固醇（OCS）</div>
+  <div class="ocs-box">
+    <strong>OCS：維持用藥僅為最後手段</strong>
+    <ul>
+      <li>急性惡化短程（5–7 天成人）：口服優於肌注/靜脈，有效預防短期復發；給予 &gt;2 週需逐步減量</li>
+      <li>每次惡化後應審視吸入治療，降低未來需要 OCS 的惡化</li>
+      <li>短程副作用：感染、VTE、睡眠障礙、血糖上升、情緒變化；即使一生 4–5 次也增加長期風險</li>
+      <li>長期 maintenance：白內障、青光眼、高血壓、糖尿病、腎上腺抑制、骨質疏鬆——僅最後手段，建議轉介專科評估表型</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    來源：GINA Severe Asthma Guide V6.0, July 2025, p.28–32; GINA 2025 Strategy Report Appendix B p.222 ·
+    <a href="https://www.fda.gov/drugs/drug-safety-and-availability/fda-requires-boxed-warning-about-serious-mental-health-side-effects-asthma-and-allergy-drug" target="_blank">FDA Montelukast 黑框警語（2020）</a>
+  </div>
+</div>
+
+</div><!-- end .app -->
+
+<script>
+function showTab(id, el) {
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+function toggleStep(card) {
+  card.classList.toggle('open');
+}
+</script>
+</body>
+</html>
