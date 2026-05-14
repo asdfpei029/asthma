@@ -239,6 +239,7 @@ ul.cl li::before { content: '▸'; position: absolute; left: 0; color: var(--tex
   <button class="tab-btn" onclick="showTab('biologics',this)">生物製劑</button>
   <button class="tab-btn" onclick="showTab('exacerbation',this)">急性惡化處理</button>
   <button class="tab-btn" onclick="showTab('meds',this)">藥物速查</button>
+  <button class="tab-btn" style="background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue);font-weight:500" onclick="showTab('bioselector',this)">⚕ 生物製劑選擇器</button>
 </div>
 
 <!-- ===== TAB 1: 總覽與定義 ===== -->
@@ -1052,15 +1053,409 @@ ul.cl li::before { content: '▸'; position: absolute; left: 0; color: var(--tex
 
 </div><!-- end .app -->
 
+<!-- ========== BIOLOGIC SELECTOR PANEL (standalone, outside .app scroll) ========== -->
+<div id="tab-bioselector" class="panel" style="max-width:960px;margin:0 auto;padding:0 12px 48px">
+
+<div id="bio-hdr" style="padding:12px 0 14px;border-bottom:0.5px solid var(--border2);margin-bottom:14px">
+  <h2 style="font-size:15px;font-weight:500">重症氣喘生物製劑選擇工具</h2>
+  <p style="font-size:12px;color:var(--text2);margin-top:3px">整合 GINA 2025 臨床建議 × 台灣健保 115/3/1 規範 · 供專科醫師決策參考，非取代臨床判斷</p>
+</div>
+<div id="bio-prog" style="display:flex;gap:4px;margin-bottom:14px;align-items:center">
+  <div class="bps" id="bp1" style="height:4px;flex:1;border-radius:2px;background:var(--blue);opacity:.5"></div>
+  <div class="bps" id="bp2" style="height:4px;flex:1;border-radius:2px;background:var(--border2)"></div>
+  <div class="bps" id="bp3" style="height:4px;flex:1;border-radius:2px;background:var(--border2)"></div>
+  <div class="bps" id="bp4" style="height:4px;flex:1;border-radius:2px;background:var(--border2)"></div>
+  <div class="bps" id="bp5" style="height:4px;flex:1;border-radius:2px;background:var(--border2)"></div>
+  <div class="bps" id="bp6" style="height:4px;flex:1;border-radius:2px;background:var(--border2)"></div>
+  <span id="bpLbl" style="font-size:11px;color:var(--text3);margin-left:6px;white-space:nowrap">步驟 1 / 6</span>
+</div>
+<div id="bioapp"></div>
+</div>
+
 <script>
-function showTab(id, el) {
-  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('tab-' + id).classList.add('active');
+/* ── GINA Biologic Selector ── */
+const BS = {step:1,age:null,ocs:null,exac:null,eos:150,ige:200,atopy:null,comorbid:[]};
+
+function bRender(){
+  bUpdateProg();
+  const a=document.getElementById('bioapp');
+  if(!a)return;
+  a.innerHTML='';
+  if(BS.step===1)bStep1(a);
+  else if(BS.step===2)bStep2(a);
+  else if(BS.step===3)bStep3(a);
+  else if(BS.step===4)bStep4(a);
+  else if(BS.step===5)bStep5(a);
+  else if(BS.step===6)bResult(a);
 }
-function toggleStep(card) {
-  card.classList.toggle('open');
+
+function bUpdateProg(){
+  for(let i=1;i<=6;i++){
+    const el=document.getElementById('bp'+i);
+    if(!el)return;
+    if(i<BS.step)el.style.cssText='height:4px;flex:1;border-radius:2px;background:var(--blue);opacity:1';
+    else if(i===BS.step)el.style.cssText='height:4px;flex:1;border-radius:2px;background:var(--blue);opacity:.5';
+    else el.style.cssText='height:4px;flex:1;border-radius:2px;background:var(--border2)';
+  }
+  const lbl=document.getElementById('bpLbl');
+  if(lbl)lbl.textContent='步驟 '+BS.step+' / 6';
+}
+
+/* Shared style helpers */
+const QC=(tag,title,sub)=>`
+<div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px">
+  <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:8px;${tag==='pre'?'background:var(--blue-bg);color:var(--blue);border:0.5px solid var(--blue-border)':tag==='nhi'?'background:var(--brown-bg);color:var(--brown);border:0.5px solid var(--brown-border)':'background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)'}">${tag==='pre'?'前提確認':tag==='nhi'?'健保規範':'GINA+健保'}</span>
+  <div style="font-size:14px;font-weight:500;margin-bottom:6px;line-height:1.5">${title}</div>
+  ${sub?`<div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.55">${sub}</div>`:''}`;
+const OPT=(txt,fn)=>`<button onclick="${fn}" style="padding:9px 13px;border:0.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;font-size:13px;background:var(--bg2);color:var(--text);text-align:left;width:100%;margin-bottom:5px;transition:all .15s;line-height:1.4" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='var(--bg2)'">${txt}</button>`;
+const OPT2=(txt,fn)=>`<button onclick="${fn}" style="padding:9px 13px;border:0.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;font-size:13px;background:var(--bg2);color:var(--text);text-align:left;flex:1;transition:all .15s;line-height:1.4" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='var(--bg2)'">${txt}</button>`;
+const AL=(type,html)=>`<div style="padding:9px 13px;border-radius:var(--radius);margin:8px 0;font-size:12px;border:0.5px solid;line-height:1.6;${type==='warn'?'background:var(--brown-bg);border-color:var(--brown-border);color:var(--brown)':type==='info'?'background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)':type==='ok'?'background:var(--green-bg);border-color:var(--green-border);color:var(--green)':'background:var(--red-bg);border-color:var(--red-border);color:var(--red)'}">${html}</div>`;
+const NAV=(back,nextFn,nextTxt='下一步 →')=>`
+<div style="display:flex;gap:8px;margin-top:10px">
+  ${back?`<button onclick="${back}" style="padding:7px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--border2);background:transparent;color:var(--text2)">← 上一步</button>`:''}
+  <button onclick="${nextFn}" style="padding:7px 18px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--blue);background:var(--blue);color:#fff">${nextTxt}</button>
+</div>`;
+const CHIP=(txt,hi)=>`<span style="font-size:11px;padding:2px 9px;border-radius:20px;${hi?'background:var(--blue-bg);border:0.5px solid var(--blue-border);color:var(--blue);font-weight:500':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text2)'}">${txt}</span>`;
+const CHIPS=()=>`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+  ${CHIP(BS.age==='adult'?'成人 ≥18歲':BS.age==='teen'?'青少年 12–17歲':'兒童 6–11歲',true)}
+  ${BS.ocs!==null?CHIP(BS.ocs?'OCS 依賴型':'非 OCS 依賴',false):''}
+  ${BS.exac?CHIP('惡化條件 ✓',false):''}
+  ${BS.eos!==null?CHIP('Eos '+BS.eos+' cells/µL',false):''}
+  ${BS.ige!==null?CHIP('IgE '+BS.ige+' IU/mL',false):''}
+</div>`;
+
+/* ── Step 1 ── */
+function bStep1(a){
+  a.innerHTML=QC('pre','已確認「重症氣喘」診斷，請選擇年齡','確認重症氣喘需符合：最大化高劑量 ICS-LABA 下仍控制不佳（GINA Step 5）；Inhaler technique 與 adherence 均已最佳化；共病已處理。')
+    +`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`
+    +OPT2('✔ 成人 ≥18 歲',"bGo1('adult')")
+    +OPT2('✔ 青少年 12–17 歲',"bGo1('teen')")
+    +OPT2('✔ 兒童 6–11 歲',"bGo1('child6')")
+    +OPT2('✔ 幼兒 &lt;6 歲',"bGo1('under6')")
+    +'</div></div>'
+    +AL('warn','⚠️ 若尚未確認重症氣喘診斷，請先完成 GINA Steps 1–4 最佳化治療評估。');
+}
+function bGo1(age){
+  BS.age=age;
+  if(age==='under6'){
+    document.getElementById('bioapp').innerHTML=AL('red','<strong>&lt;6 歲：</strong>目前所有生物製劑（omalizumab、mepolizumab、dupilumab、tezepelumab）在台灣健保均不給付 &lt;6 歲族群。建議依 GINA 指引最大化非生物製劑治療。')
+      +`<button onclick="BS.step=1;BS.age=null;bRender()" style="margin-top:8px;padding:7px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--border2);background:transparent;color:var(--text2)">← 重新開始</button>`;
+    return;
+  }
+  BS.step=2;bRender();
+}
+
+/* ── Step 2 ── */
+function bStep2(a){
+  a.innerHTML=CHIPS()+QC('nhi','是否為「口服類固醇依賴型（OCS-dependent）」氣喘？',
+    BS.age==='adult'?'健保要求成人過去 <strong>3 個月</strong>持續使用 prednisolone ≥5mg/day（或等價 OCS）':
+    BS.age==='teen'?'健保要求青少年過去 <strong>1–3 個月</strong>持續使用 prednisolone ≥5mg/day':
+    '健保要求 6–11 歲兒童過去 <strong>1 個月</strong>持續使用 prednisolone ≥5mg/day')
+    +`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`
+    +OPT2('是，OCS 依賴型',"BS.ocs=true;BS.step=3;bRender()")
+    +OPT2('否，無須長期 OCS',"BS.ocs=false;BS.step=3;bRender()")
+    +'</div></div>';
+}
+
+/* ── Step 3 ── */
+function bStep3(a){
+  a.innerHTML=CHIPS()+QC('nhi','過去 12 個月惡化紀錄',
+    '健保<strong>所有生物製劑共同必要條件</strong>：過去 12 個月內 ≥2 次急性惡化需要全身性類固醇，且其中 ≥1 次因氣喘惡化而需<strong>急診或住院</strong>。')
+    +`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`
+    +OPT2('✔ 符合（≥2次，含≥1次急診/住院）',"BS.exac=true;BS.step=4;bRender()")
+    +OPT2('✘ 不符合',"bExacFail()")
+    +'</div></div>';
+}
+function bExacFail(){
+  BS.exac=false;
+  document.getElementById('bioapp').innerHTML=AL('red','<strong>不符合健保惡化條件。</strong>過去 12 個月需 ≥2 次全身性類固醇治療之惡化（含 ≥1 次急診/住院）為所有生物製劑的健保共同必要條件。<br>建議：繼續最佳化 Step 4–5 治療，累積足夠惡化紀錄後再重新評估。')
+    +`<button onclick="BS.step=1;Object.assign(BS,{age:null,ocs:null,exac:null,eos:150,ige:200,atopy:null,comorbid:[]});bRender()" style="margin-top:8px;padding:7px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--border2);background:transparent;color:var(--text2)">← 重新開始</button>`;
+}
+
+/* ── Step 4: Eos ── */
+function bStep4(a){
+  a.innerHTML=CHIPS()+QC('pre','血液嗜酸性白血球（Blood Eosinophils）cells/µL',
+    'OCS 顯著抑制 eosinophil，應在停 OCS ≥1–2 週後測量；甚至停 OCS 2 天即可能回升至資格閾值。晨間測量值較高。可重複測量最多 3 次。')
+    +`<div style="margin:6px 0 12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <input type="range" min="0" max="2000" step="25" value="${BS.eos}" id="eosR" oninput="bUpdateEos(this.value)" style="flex:1">
+        <span id="eosV" style="font-size:15px;font-weight:500;min-width:100px;color:var(--blue);text-align:right">${BS.eos} cells/µL</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:10px"><span>0</span><span>500</span><span>1000</span><span>1500</span><span>≥2000</span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px" id="eosBands">
+        <div onclick="bSetEos(75)" style="padding:7px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg2);text-align:center;cursor:pointer" id="eb0"><p style="font-size:12px;font-weight:600;color:var(--text3)">&lt;150</p><span style="font-size:10px;color:var(--text3)">T2 低</span></div>
+        <div onclick="bSetEos(225)" style="padding:7px;border-radius:var(--radius);border:0.5px solid var(--brown-border);background:var(--brown-bg);text-align:center;cursor:pointer" id="eb1"><p style="font-size:12px;font-weight:600;color:var(--brown)">150–299</p><span style="font-size:10px;color:var(--brown)">T2 中</span></div>
+        <div onclick="bSetEos(400)" style="padding:7px;border-radius:var(--radius);border:0.5px solid var(--blue-border);background:var(--blue-bg);text-align:center;cursor:pointer" id="eb2"><p style="font-size:12px;font-weight:600;color:var(--blue)">300–499</p><span style="font-size:10px;color:var(--blue)">T2 高</span></div>
+        <div onclick="bSetEos(600)" style="padding:7px;border-radius:var(--radius);border:0.5px solid var(--green-border);background:var(--green-bg);text-align:center;cursor:pointer" id="eb3"><p style="font-size:12px;font-weight:600;color:var(--green)">≥500</p><span style="font-size:10px;color:var(--green)">T2 極高</span></div>
+      </div>
+    </div>
+    </div>`
+    +NAV("BS.step=3;bRender()","BS.step=5;bRender()");
+  bUpdateEos(BS.eos);
+}
+function bUpdateEos(v){
+  BS.eos=parseInt(v);
+  const el=document.getElementById('eosV');
+  if(el)el.textContent=v+' cells/µL';
+  const r=document.getElementById('eosR');
+  if(r)r.value=v;
+  ['eb0','eb1','eb2','eb3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.outline='none';});
+  const active=v<150?'eb0':v<300?'eb1':v<500?'eb2':'eb3';
+  const ae=document.getElementById(active);
+  if(ae)ae.style.outline='2px solid var(--blue)';
+}
+function bSetEos(v){BS.eos=v;const r=document.getElementById('eosR');if(r)r.value=v;bUpdateEos(v);}
+
+/* ── Step 5: IgE + Atopy + Comorbid ── */
+function bStep5(a){
+  const comorbids=[
+    {id:'nasal_polyp',label:'鼻息肉（Nasal polyps）'},
+    {id:'crswnp',label:'慢性鼻竇炎合併鼻息肉（CRSwNP）'},
+    {id:'atopic_derm',label:'中度至重度異位性皮膚炎（AD）'},
+    {id:'food_allergy',label:'確認 IgE 媒介食物過敏'},
+    {id:'eos_esoph',label:'嗜酸性食道炎（EoE）'},
+    {id:'egpa',label:'EGPA（嗜酸性肉芽腫血管炎）'},
+  ];
+  a.innerHTML=CHIPS()
+    +QC('pre','Total IgE（IU/mL）','健保 omalizumab 規範：Total IgE 需介於 30–1300 IU/mL，且體重在劑量表範圍內。')
+    +`<div style="display:flex;align-items:center;gap:10px;margin:4px 0 6px">
+        <input type="range" min="0" max="2000" step="10" value="${BS.ige}" id="igeR" oninput="bUpdateIge(this.value)" style="flex:1">
+        <span id="igeV" style="font-size:15px;font-weight:500;min-width:90px;color:var(--blue);text-align:right">${BS.ige} IU/mL</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:10px"><span>0</span><span>500</span><span>1000</span><span>1500</span><span>≥2000</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:4px">
+        <div onclick="bSetIge(15)" style="padding:6px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg2);text-align:center;cursor:pointer" id="ib0"><p style="font-size:11px;font-weight:600;color:var(--text3)">&lt;30</p><span style="font-size:10px;color:var(--text3)">Oma 不適用</span></div>
+        <div onclick="bSetIge(300)" style="padding:6px;border-radius:var(--radius);border:0.5px solid var(--blue-border);background:var(--blue-bg);text-align:center;cursor:pointer" id="ib1"><p style="font-size:11px;font-weight:600;color:var(--blue)">30–1300</p><span style="font-size:10px;color:var(--blue)">Oma 適用範圍</span></div>
+        <div onclick="bSetIge(1500)" style="padding:6px;border-radius:var(--radius);border:0.5px solid var(--brown-border);background:var(--brown-bg);text-align:center;cursor:pointer" id="ib2"><p style="font-size:11px;font-weight:600;color:var(--brown)">&gt;1300</p><span style="font-size:10px;color:var(--brown)">Oma 需特殊考量</span></div>
+      </div>
+      </div>`
+    +QC('pre','過敏致敏確認（Atopy）','Skin prick test 陽性，或 specific IgE（CAP、MAST、RAST、FAST、ELISA）陽性——健保 omalizumab 必要條件。')
+    +`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px">`
+    +OPT2('✔ 已確認過敏致敏',"BS.atopy=true;bHighlightAtopy(0)")
+    +OPT2('✘ 無過敏致敏',"BS.atopy=false;bHighlightAtopy(1)")
+    +'</div></div>'
+    +QC('pre','合併 T2 相關共病（可複選，影響生物製劑優先順序）','')
+    +comorbids.map(c=>`<button id="cb_${c.id}" onclick="bToggleCom('${c.id}')" style="display:block;width:100%;padding:8px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);text-align:left;cursor:pointer;font-size:13px;margin-bottom:5px">${c.label}</button>`).join('')
+    +'</div>'
+    +NAV("BS.step=4;bRender()","BS.step=6;bRender()","產生建議 →");
+  bUpdateIge(BS.ige);
+  BS.comorbid.forEach(id=>{const e=document.getElementById('cb_'+id);if(e){e.style.background='var(--blue-bg)';e.style.borderColor='var(--blue-border)';e.style.color='var(--blue)';}});
+}
+function bHighlightAtopy(idx){
+  const btns=document.querySelectorAll('#bioapp div[style*="grid-template-columns:1fr 1fr"] button');
+  if(btns.length>=2){btns.forEach(b=>{b.style.background='var(--bg2)';b.style.borderColor='var(--border2)';b.style.color='var(--text)';});btns[idx].style.background='var(--blue-bg)';btns[idx].style.borderColor='var(--blue-border)';btns[idx].style.color='var(--blue)';}
+}
+function bUpdateIge(v){
+  BS.ige=parseInt(v);
+  const el=document.getElementById('igeV');if(el)el.textContent=v+' IU/mL';
+  const r=document.getElementById('igeR');if(r)r.value=v;
+  ['ib0','ib1','ib2'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.outline='none';});
+  const active=v<30?'ib0':v<=1300?'ib1':'ib2';
+  const ae=document.getElementById(active);if(ae)ae.style.outline='2px solid var(--blue)';
+}
+function bSetIge(v){BS.ige=v;bUpdateIge(v);}
+function bToggleCom(id){
+  const i=BS.comorbid.indexOf(id);
+  const e=document.getElementById('cb_'+id);
+  if(i>-1){BS.comorbid.splice(i,1);if(e){e.style.background='var(--bg2)';e.style.borderColor='var(--border2)';e.style.color='var(--text)';}}
+  else{BS.comorbid.push(id);if(e){e.style.background='var(--blue-bg)';e.style.borderColor='var(--blue-border)';e.style.color='var(--blue)';}}
+}
+
+/* ── Step 6: Result ── */
+function bResult(a){
+  const isAdult=BS.age==='adult', isTeen=BS.age==='teen', isChild=BS.age==='child6';
+
+  /* Compute scores & NHI eligibility */
+  const drugs=[
+    bDrugOma(isAdult,isTeen,isChild),
+    bDrugMepo(isAdult,isTeen,isChild),
+    bDrugBena(isAdult),
+    bDrugDupi(isAdult,isTeen,isChild),
+    bDrugTez(isAdult,isTeen),
+  ];
+  drugs.sort((a,b)=>b.score-a.score);
+
+  const eosLbl=BS.eos<150?'T2 低（<150）':BS.eos<300?'T2 中（150–299）':BS.eos<500?'T2 高（300–499）':'T2 極高（≥500）';
+
+  /* Alerts */
+  let alerts='';
+  if(BS.eos>1500)alerts+=AL('warn','⚠️ Eos >1500 cells/µL：Dupilumab Phase III 試驗排除此族群，GINA 不建議。優先考慮 Mepolizumab 或 Benralizumab（先確認排除 EGPA）。');
+  if(BS.eos<150)alerts+=AL('info','ℹ️ Eos <150（T2 低）：Tezepelumab 為唯一 GINA 推薦且健保（成人）無 Eos 閾值的選項。若 OCS 依賴，Dupilumab 亦可考慮。');
+  if(BS.ocs&&(isAdult||isTeen)){
+    const top1=drugs[0];
+    if(top1&&top1.name==='Tezepelumab')alerts+=AL('warn','⚠️ OCS 依賴型：SOURCE 研究顯示 Tezepelumab 在 OCS 依賴患者中未能顯著降低 OCS 劑量。優先考慮 Dupilumab（最強 OCS 節省證據）或 Mepolizumab/Benralizumab（Eos≥300）。');
+    if(top1&&top1.name==='Dupilumab'&&BS.eos>=150)alerts+=AL('ok','✓ OCS 依賴 + Eos≥150：Dupilumab 在 OCS 依賴型重症氣喘有最強 OCS 節省證據（中位數降低 50%，維持 2 年）。');
+  }
+
+  /* Summary chips */
+  const summaryChips=`<div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">
+    <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border);display:inline-block;margin-bottom:8px">病人摘要</span>
+    <div style="display:flex;flex-wrap:wrap;gap:5px">
+      ${CHIP(isAdult?'成人 ≥18歲':isTeen?'青少年 12–17歲':'兒童 6–11歲',true)}
+      ${CHIP(BS.ocs?'OCS 依賴型':'非 OCS 依賴',false)}
+      ${CHIP('惡化條件 ✓',false)}
+      ${CHIP('Eos '+BS.eos+' cells/µL（'+eosLbl+'）',false)}
+      ${CHIP('IgE '+BS.ige+' IU/mL',false)}
+      ${CHIP(BS.atopy===true?'過敏致敏 ✓':BS.atopy===false?'過敏致敏 ✗':'過敏致敏未確認',false)}
+      ${BS.comorbid.map(c=>CHIP({nasal_polyp:'鼻息肉',crswnp:'CRSwNP',atopic_derm:'AD',food_allergy:'食物過敏',eos_esoph:'EoE',egpa:'EGPA'}[c],false)).join('')}
+    </div>
+  </div>`;
+
+  /* Drug cards */
+  const dcHTML=drugs.map((d,i)=>{
+    const rankColor=i===0?'var(--blue)':i===1?'var(--teal)':i===2?'var(--brown)':'var(--text3)';
+    const nhiLabel=d.nhiOK
+      ?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border);font-weight:600;margin-left:5px">健保給付</span>`
+      :`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--red-bg);color:var(--red);border:0.5px solid var(--red-border);font-weight:600;margin-left:5px">健保不符</span>`;
+    const rows=d.rows.map(r=>`<div style="display:flex;gap:6px;font-size:12px;margin-bottom:3px">
+      <span style="color:var(--text3);min-width:60px;flex-shrink:0;font-weight:500">${r.lbl}</span>
+      <span style="color:${r.ok==='ok'?'var(--green)':r.ok==='warn'?'var(--brown)':r.ok==='no'?'var(--red)':'var(--text2)'};flex:1;line-height:1.5">${r.val}</span>
+    </div>`).join('');
+    return `<div style="border-radius:var(--radius-lg);border:${i===0?'2px':'0.5px'} solid var(${d.bdr});background:var(${d.bg});padding:12px 14px;margin-bottom:8px">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+        <div style="width:24px;height:24px;border-radius:50%;background:${rankColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0">${i+1}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${d.name} <span style="font-size:11px;font-weight:400;color:var(--text3)">(${d.abbr})</span>${nhiLabel}</div>
+          <div style="font-size:11px;color:var(--text3);font-style:italic">${d.brand}</div>
+        </div>
+        <div style="font-size:20px;font-weight:500;color:${rankColor}">${d.score}</div>
+      </div>
+      ${rows}
+      ${d.nhiOK&&d.nhiNote?`<div style="display:flex;gap:6px;font-size:12px;margin-top:3px"><span style="color:var(--text3);min-width:60px;flex-shrink:0;font-weight:500">健保規範</span><span style="color:var(--brown)">${d.nhiNote}</span></div>`:''}
+    </div>`;
+  }).join('');
+
+  a.innerHTML=summaryChips+alerts
+    +`<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin:12px 0 8px">生物製劑建議（依適合程度評分排序）</div>`
+    +dcHTML
+    +AL('info','<strong>使用注意（GINA 2025 + 健保規範）：</strong><br>· 所有藥物需<strong>事前審查核准</strong>；使用 <strong>32 週後評估</strong>惡化改善情形<br>· Dupilumab 不得與其他氣喘生物製劑併用<br>· 第一劑勿與疫苗同日施打；冷藏注射器注射前先回溫至室溫<br>· OCS 逐步減量：監測晨間 cortisol；停 OCS 後 6 個月仍需類固醇補充（手術/生病）<br>· Eos ≥300/µL：先排除 Strongyloides 等寄生蟲感染再開始生物製劑')
+    +`<div style="display:flex;gap:8px;margin-top:10px">
+      <button onclick="BS.step=5;bRender()" style="padding:7px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--border2);background:transparent;color:var(--text2)">← 修改條件</button>
+      <button onclick="BS.step=1;Object.assign(BS,{age:null,ocs:null,exac:null,eos:150,ige:200,atopy:null,comorbid:[]});bRender()" style="padding:7px 18px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--blue);background:var(--blue);color:#fff">重新評估</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:12px;border-top:0.5px solid var(--border);padding-top:8px;line-height:1.6">
+      來源：GINA Severe Asthma Guide V6.0 July 2025 · 台灣健保給付規定第6節 115/3/1版<br>
+      健保規範：Omalizumab 111/2/1 · Mepolizumab/Benralizumab 115/4/1 · Dupilumab 113/2/1 · Tezepelumab 113/6/1<br>
+      ⚠️ 本工具僅供臨床決策參考，評分為相對參考值。實際用藥需依健保審查核准、個別病患狀況及主治醫師判斷。
+    </div>`;
+}
+
+/* ── Drug builders ── */
+function bDrugOma(isAdult,isTeen,isChild){
+  const ageOK=isAdult||isTeen||isChild;
+  const igeOK=BS.ige>=30&&BS.ige<=1300;
+  const atopyOK=BS.atopy===true;
+  const nhiOK=(isAdult||isTeen||isChild)&&igeOK&&atopyOK&&BS.exac;
+  let score=0;
+  if(igeOK)score+=2;if(atopyOK)score+=3;if(BS.eos>=260)score+=2;
+  if(BS.comorbid.includes('nasal_polyp'))score+=2;if(BS.comorbid.includes('food_allergy'))score+=2;
+  if(!igeOK)score-=3;if(!atopyOK)score-=2;
+  return{name:'Omalizumab',brand:'Xolair',abbr:'Anti-IgE',bg:'--blue-bg',bdr:'--blue-border',nhiOK,score:Math.max(0,score),
+    nhiNote:nhiOK?'需事前審查 · 每月≤2次 · 使用16週評估':'',
+    rows:[
+      {lbl:'機轉',val:'Anti-IgE：結合游離 IgE Fc 端，↓游離 IgE、↓FcεRI 表達'},
+      {lbl:'GINA適用',val:ageOK&&igeOK&&atopyOK?'符合（IgE 在範圍 + 過敏致敏確認）':'不符合（IgE 範圍外 或 無過敏致敏）',ok:(ageOK&&igeOK&&atopyOK)?'ok':'no'},
+      {lbl:'健保資格',val:nhiOK?'✓ 符合（≥6歲，IgE 30–1300，過敏致敏+，高劑量ICS失敗，惡化條件）':'✗ 不符合健保規範',ok:nhiOK?'ok':'no'},
+      {lbl:'IgE',val:BS.ige+' IU/mL → '+(igeOK?'在 30–1300 範圍 ✓':'不在 30–1300 範圍 ✗'),ok:igeOK?'ok':'no'},
+      {lbl:'Eos預測',val:BS.eos>=260?'≥260/µL：反應預測因子 ++（GINA）':BS.eos>=150?'150–259/µL：輕度支持':'<150/µL：低支持（但觀察性研究低/高 Eos 均可能有效）'},
+      {lbl:'共病',val:[BS.comorbid.includes('nasal_polyp')?'鼻息肉 ✓':'',BS.comorbid.includes('food_allergy')?'IgE媒介食物過敏 ✓':''].filter(Boolean).join('；')||'無特定共病加分'},
+      {lbl:'給藥',val:'SC q2–4w，依體重+IgE劑量表；可自行注射'},
+      {lbl:'副作用',val:'注射部位反應；過敏性休克 ~0.2%；含 polysorbate'},
+    ]};
+}
+function bDrugMepo(isAdult,isTeen,isChild){
+  const ageOK=isAdult||isTeen||isChild;
+  const eosGINA=BS.eos>=150;const eosNHI=BS.eos>=300;
+  const nhiOK=ageOK&&eosNHI&&BS.ocs&&BS.exac;
+  let score=0;
+  if(eosGINA)score+=3;if(BS.eos>=300)score+=2;if(BS.eos>=500)score+=2;
+  if(BS.comorbid.includes('nasal_polyp')||BS.comorbid.includes('crswnp'))score+=2;
+  if(BS.comorbid.includes('egpa'))score+=3;if(BS.ocs)score+=1;
+  return{name:'Mepolizumab',brand:'Nucala',abbr:'Anti-IL5',bg:'--green-bg',bdr:'--green-border',nhiOK,score:Math.max(0,score),
+    nhiNote:nhiOK?'需事前審查 · q4w · 32週評估':'',
+    rows:[
+      {lbl:'機轉',val:'Anti-IL5：結合循環 IL-5，抑制 eosinophil 成熟與存活'},
+      {lbl:'GINA適用',val:eosGINA?`符合（Eos ${BS.eos}≥150）`:`不符合 GINA 閾值（Eos ${BS.eos}<150）`,ok:eosGINA?'ok':'no'},
+      {lbl:'健保資格',val:nhiOK?'✓ 符合（Eos≥300 + OCS依賴 + 惡化條件）':`✗ 不符合 ${!eosNHI?`（Eos ${BS.eos}<300，健保需≥300）`:''}${!BS.ocs?' + 需OCS依賴':''}`,ok:nhiOK?'ok':'no'},
+      {lbl:'Eos',val:`${BS.eos} cells/µL → 健保 ≥300；GINA 反應預測 ≥300 +++`,ok:BS.eos>=300?'ok':BS.eos>=150?'warn':'no'},
+      {lbl:'年齡',val:ageOK?`${isChild?'6–11歲 ✓':isTeen?'青少年 ✓':'成人 ✓'}`:'不符合',ok:ageOK?'ok':'no'},
+      {lbl:'共病',val:[BS.comorbid.includes('egpa')?'EGPA ✓（首選）':'',BS.comorbid.includes('crswnp')?'CRSwNP ✓':''].filter(Boolean).join('；')||'無特定共病加分'},
+      {lbl:'給藥',val:'SC 100mg q4w（成人）；40mg q4w（6–11歲）；可自行注射'},
+      {lbl:'副作用',val:'注射部位反應、頭痛；兒童神經系統事件較多'},
+    ]};
+}
+function bDrugBena(isAdult){
+  const ageNHI=isAdult;
+  const eosGINA=BS.eos>=150;const eosNHI=BS.eos>=300;
+  const nhiOK=ageNHI&&eosNHI&&BS.ocs&&BS.exac;
+  let score=0;
+  if(eosGINA)score+=3;if(BS.eos>=300)score+=2;if(BS.eos>=500)score+=2;
+  if(BS.comorbid.includes('nasal_polyp'))score+=1;if(BS.comorbid.includes('egpa'))score+=2;
+  if(BS.ocs)score+=1;if(!isAdult)score-=2;
+  return{name:'Benralizumab',brand:'Fasenra',abbr:'Anti-IL5Rα',bg:'--green-bg',bdr:'--green-border',nhiOK,score:Math.max(0,score),
+    nhiNote:nhiOK?'需事前審查 · 前3劑q4w，後q8w · 32週評估':'',
+    rows:[
+      {lbl:'機轉',val:'Anti-IL5Rα：結合 IL-5Rα → eosinophil 凋亡（近乎完全清除）'},
+      {lbl:'GINA適用',val:(eosGINA&&(isAdult||BS.age==='teen'))?`符合（Eos ${BS.eos}≥150，≥12歲）`:`不符合（Eos<150 或 年齡<12）`,ok:(eosGINA&&(isAdult||BS.age==='teen'))?'ok':'no'},
+      {lbl:'健保資格',val:nhiOK?'✓ 符合（≥18歲，Eos≥300，OCS依賴，惡化條件）':`✗ 不符合 ${!isAdult?'（健保限≥18歲成人）':''}${!eosNHI?`（Eos ${BS.eos}<300）`:''}${!BS.ocs?' + 需OCS依賴':''}`,ok:nhiOK?'ok':'no'},
+      {lbl:'Eos',val:`${BS.eos} cells/µL → 健保需≥300；幾乎完全清除 eos（Bena 獨特優勢）`,ok:BS.eos>=300?'ok':BS.eos>=150?'warn':'no'},
+      {lbl:'年齡限制',val:isAdult?'成人 ≥18歲 ✓（健保+GINA）':BS.age==='teen'?'青少年（GINA ≥12歲可，但健保限≥18歲）':'兒童（不適用）',ok:isAdult?'ok':'warn'},
+      {lbl:'共病',val:[BS.comorbid.includes('egpa')?'EGPA ✓':'',BS.comorbid.includes('nasal_polyp')?'鼻息肉（主觀改善）':''].filter(Boolean).join('；')||'無特定共病加分'},
+      {lbl:'給藥',val:'SC 30mg：第0、4、8週，後 q8w；可自行注射（較少回診頻率優勢）'},
+      {lbl:'副作用',val:'注射部位反應；過敏性休克罕見'},
+    ]};
+}
+function bDrugDupi(isAdult,isTeen,isChild){
+  const ageOK=isAdult||isTeen||isChild;
+  const eosOK=BS.eos>=150&&BS.eos<=1500;
+  const eos1500=BS.eos>1500;
+  const nhiOK=ageOK&&BS.eos>=300&&BS.ocs&&BS.exac;
+  let score=0;
+  if(eosOK)score+=3;if(BS.eos>=300&&!eos1500)score+=2;
+  if(BS.comorbid.includes('crswnp')||BS.comorbid.includes('nasal_polyp'))score+=3;
+  if(BS.comorbid.includes('atopic_derm'))score+=3;if(BS.comorbid.includes('eos_esoph'))score+=2;
+  if(BS.ocs)score+=2;if(eos1500)score-=5;
+  return{name:'Dupilumab',brand:'Dupixent',abbr:'Anti-IL4Rα',bg:'--purple-bg',bdr:'--purple-border',nhiOK,score:Math.max(0,score),
+    nhiNote:nhiOK?'需事前審查 · OCS依賴起始600mg維持300mg q2w · 32週評估 · 不得與其他氣喘生物製劑併用':'',
+    rows:[
+      {lbl:'機轉',val:'Anti-IL4Rα：同時阻斷 IL-4 和 IL-13 訊號（最廣 T2 發炎阻斷）'},
+      {lbl:'GINA適用',val:(eosOK||BS.ocs)?`${eos1500?'⚠️ Eos>1500 不建議（Phase III排除）':'符合'}（Eos ${BS.eos}；${BS.ocs?'OCS依賴':''}）`:'不符合',ok:eos1500?'warn':eosOK?'ok':'warn'},
+      {lbl:'健保資格',val:nhiOK?'✓ 符合（≥12歲，Eos≥300，OCS依賴，惡化條件）':`✗ 不符合 ${BS.eos>=300?'':` Eos ${BS.eos}<300`}${!BS.ocs?' + 需OCS依賴':''}`,ok:nhiOK?'ok':'no'},
+      {lbl:'Eos',val:`${BS.eos} cells/µL → ${eos1500?'⚠️ >1500 Phase III排除，GINA不建議':BS.eos>=300?'≥300 +++ 強預測力':BS.eos>=150?'150–299 + 中度支持（OCS依賴型無最低閾值要求）':'<150（OCS依賴型可考慮）'}`,ok:eos1500?'warn':BS.eos>=150?'ok':'warn'},
+      {lbl:'OCS節省',val:'最強 OCS 節省證據：OCS依賴型中位數降低 50%，效果持續 2 年',ok:'ok'},
+      {lbl:'共病優勢',val:[BS.comorbid.includes('crswnp')||BS.comorbid.includes('nasal_polyp')?'CRSwNP/鼻息肉 ✓✓✓':'',BS.comorbid.includes('atopic_derm')?'異位性皮膚炎 ✓✓✓':'',BS.comorbid.includes('eos_esoph')?'EoE ✓':''].filter(Boolean).join('；')||'無特定共病加分'},
+      {lbl:'給藥',val:'SC：OCS依賴/AD/CRSwNP→起始600mg，維持300mg q2w；其他→起始400mg，維持200mg q2w'},
+      {lbl:'副作用',val:'注射部位反應；短暫血液eosinophilia 4–13%；停OCS後可能揭露EGPA'},
+    ]};
+}
+function bDrugTez(isAdult,isTeen){
+  const nhiOK=isAdult&&BS.exac;
+  let score=2; // broadest indication baseline
+  if(BS.eos>=150)score+=2;if(BS.eos>=300)score+=1;
+  if(BS.eos<150)score+=2; // only option without Eos threshold
+  if(BS.ocs)score-=1; // SOURCE study: no OCS sparing
+  if(!isAdult&&isTeen)score-=1;
+  return{name:'Tezepelumab',brand:'Tezspire',abbr:'Anti-TSLP',bg:'--amber-bg',bdr:'--brown-border',nhiOK,score:Math.max(0,score),
+    nhiNote:nhiOK?'需事前審查 · q4w · 32週評估 · 無Eos閾值要求':'',
+    rows:[
+      {lbl:'機轉',val:'Anti-TSLP：最上游阻斷上皮 alarmin，覆蓋最廣 T2 發炎路徑'},
+      {lbl:'GINA適用',val:(isAdult||isTeen)?'符合（≥12歲，無最低Eos閾值，T2低/高均可）':'不符合',ok:(isAdult||isTeen)?'ok':'no'},
+      {lbl:'健保資格',val:nhiOK?'✓ 符合（≥18歲，惡化條件符合，無Eos要求）':!isAdult?'✗ 不符合（健保限≥18歲成人）':'✗ 不符合',ok:nhiOK?'ok':'no'},
+      {lbl:'Eos',val:`${BS.eos} cells/µL → GINA/健保均無最低Eos門檻（T2低/高均適用，為低T2族群唯一健保選項）`,ok:'ok'},
+      {lbl:'OCS依賴',val:BS.ocs?'⚠️ OCS依賴型：SOURCE研究顯示 tezepelumab 未能顯著降低 OCS 劑量（vs placebo），劣於 Dupilumab':'非OCS依賴，無此限制',ok:BS.ocs?'warn':'ok'},
+      {lbl:'療效',val:'RCT：嚴重惡化降低30–70%；QoL、肺功能、症狀改善，不受過敏狀態影響'},
+      {lbl:'給藥',val:'SC 210mg q4w；可自行注射'},
+      {lbl:'副作用',val:'注射部位反應；過敏性休克罕見；安全性報告最長2年'},
+    ]};
+}
+
+/* Hook into showTab to trigger bRender */
+const _origShowTab=showTab;
+function showTab(id,el){
+  _origShowTab(id,el);
+  if(id==='bioselector'){
+    setTimeout(()=>bRender(),50);
+  }
 }
 </script>
 </body>
