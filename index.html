@@ -1072,7 +1072,21 @@ ul.cl li::before { content: '▸'; position: absolute; left: 0; color: var(--tex
 <div id="bioapp"></div>
 </div>
 
+
 <script>
+function showTab(id, el) {
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  if(id === 'bioselector') {
+    setTimeout(function(){ bRender(); }, 50);
+  }
+}
+function toggleStep(card) {
+  card.classList.toggle('open');
+}
+
 /* ── GINA Biologic Selector ── */
 const BS = {step:1,age:null,ocs:null,exac:null,eos:150,ige:200,atopy:null,comorbid:[]};
 
@@ -1265,7 +1279,6 @@ function bToggleCom(id){
 function bResult(a){
   const isAdult=BS.age==='adult', isTeen=BS.age==='teen', isChild=BS.age==='child6';
 
-  /* Compute scores & NHI eligibility */
   const drugs=[
     bDrugOma(isAdult,isTeen,isChild),
     bDrugMepo(isAdult,isTeen,isChild),
@@ -1273,21 +1286,27 @@ function bResult(a){
     bDrugDupi(isAdult,isTeen,isChild),
     bDrugTez(isAdult,isTeen),
   ];
-  drugs.sort((a,b)=>b.score-a.score);
+
+  /* Split into NHI-eligible vs GINA-only */
+  const nhiDrugs  = drugs.filter(d => d.nhiOK && d.ginaOK).sort((a,b)=>b.nhiScore-a.nhiScore);
+  const ginaDrugs = drugs.filter(d => !d.nhiOK && d.ginaOK).sort((a,b)=>b.ginaScore-a.ginaScore);
+  /* Drugs matching neither: suppress */
 
   const eosLbl=BS.eos<150?'T2 低（<150）':BS.eos<300?'T2 中（150–299）':BS.eos<500?'T2 高（300–499）':'T2 極高（≥500）';
 
-  /* Alerts */
+  /* Clinical alerts */
   let alerts='';
-  if(BS.eos>1500)alerts+=AL('warn','⚠️ Eos >1500 cells/µL：Dupilumab Phase III 試驗排除此族群，GINA 不建議。優先考慮 Mepolizumab 或 Benralizumab（先確認排除 EGPA）。');
-  if(BS.eos<150)alerts+=AL('info','ℹ️ Eos <150（T2 低）：Tezepelumab 為唯一 GINA 推薦且健保（成人）無 Eos 閾值的選項。若 OCS 依賴，Dupilumab 亦可考慮。');
+  if(BS.eos>1500) alerts+=AL('warn','⚠️ Eos >1500 cells/µL：Dupilumab Phase III 試驗排除此族群，GINA 不建議。優先考慮 Mepolizumab 或 Benralizumab（先確認排除 EGPA）。');
+  if(BS.eos<150)  alerts+=AL('info','ℹ️ Eos <150（T2 低）：Tezepelumab 為唯一 GINA 推薦且健保（成人）無 Eos 閾值的選項。若 OCS 依賴，Dupilumab 亦可考慮。');
   if(BS.ocs&&(isAdult||isTeen)){
-    const top1=drugs[0];
-    if(top1&&top1.name==='Tezepelumab')alerts+=AL('warn','⚠️ OCS 依賴型：SOURCE 研究顯示 Tezepelumab 在 OCS 依賴患者中未能顯著降低 OCS 劑量。優先考慮 Dupilumab（最強 OCS 節省證據）或 Mepolizumab/Benralizumab（Eos≥300）。');
-    if(top1&&top1.name==='Dupilumab'&&BS.eos>=150)alerts+=AL('ok','✓ OCS 依賴 + Eos≥150：Dupilumab 在 OCS 依賴型重症氣喘有最強 OCS 節省證據（中位數降低 50%，維持 2 年）。');
+    const g0=ginaDrugs[0];
+    const n0=nhiDrugs[0];
+    if(n0&&n0.name==='Tezepelumab') alerts+=AL('warn','⚠️ OCS 依賴型：SOURCE 研究顯示 Tezepelumab 在 OCS 依賴患者中未能顯著降低 OCS 劑量。優先考慮 Dupilumab（最強 OCS 節省證據）或 Mepolizumab/Benralizumab（Eos≥300）。');
+    if((n0&&n0.name==='Dupilumab'||g0&&g0.name==='Dupilumab')&&BS.eos>=150) alerts+=AL('ok','✓ OCS 依賴 + Eos≥150：Dupilumab 在 OCS 依賴型重症氣喘有最強 OCS 節省證據（中位數降低 50%，持續 2 年）。');
   }
+  if(!BS.ocs&&nhiDrugs.length===0) alerts+=AL('warn','⚠️ 目前健保規範（115/4/1）：Mepolizumab 與 Benralizumab 均要求 OCS 依賴型，Dupilumab 亦要求 OCS 依賴。此病人目前不符合任何嗜酸性生物製劑的健保條件。Tezepelumab（若成人且符合惡化條件）或 Omalizumab（若 IgE 30–1300 且過敏致敏）可考慮。');
 
-  /* Summary chips */
+  /* Summary */
   const summaryChips=`<div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">
     <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border);display:inline-block;margin-bottom:8px">病人摘要</span>
     <div style="display:flex;flex-wrap:wrap;gap:5px">
@@ -1301,44 +1320,82 @@ function bResult(a){
     </div>
   </div>`;
 
-  /* Drug cards */
-  const dcHTML=drugs.map((d,i)=>{
-    const rankColor=i===0?'var(--blue)':i===1?'var(--teal)':i===2?'var(--brown)':'var(--text3)';
-    const nhiLabel=d.nhiOK
-      ?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border);font-weight:600;margin-left:5px">健保給付</span>`
-      :`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--red-bg);color:var(--red);border:0.5px solid var(--red-border);font-weight:600;margin-left:5px">健保不符</span>`;
-    const rows=d.rows.map(r=>`<div style="display:flex;gap:6px;font-size:12px;margin-bottom:3px">
+  /* Card renderer */
+  function makeDrugCard(d, rank, showNhiNote){
+    const rankColors=['var(--blue)','var(--teal)','var(--brown)','var(--text3)','var(--text3)'];
+    const rc = rankColors[Math.min(rank, rankColors.length-1)];
+    const nhiLabel = d.nhiOK
+      ? `<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border);font-weight:600;margin-left:5px">健保給付</span>`
+      : `<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--amber-bg);color:var(--brown);border:0.5px solid var(--brown-border);font-weight:600;margin-left:5px">符合 GINA 建議</span>`;
+    const rows = d.rows.map(r=>`<div style="display:flex;gap:6px;font-size:12px;margin-bottom:3px">
       <span style="color:var(--text3);min-width:60px;flex-shrink:0;font-weight:500">${r.lbl}</span>
       <span style="color:${r.ok==='ok'?'var(--green)':r.ok==='warn'?'var(--brown)':r.ok==='no'?'var(--red)':'var(--text2)'};flex:1;line-height:1.5">${r.val}</span>
     </div>`).join('');
-    return `<div style="border-radius:var(--radius-lg);border:${i===0?'2px':'0.5px'} solid var(${d.bdr});background:var(${d.bg});padding:12px 14px;margin-bottom:8px">
+    const score = showNhiNote ? d.nhiScore : d.ginaScore;
+    return `<div style="border-radius:var(--radius-lg);border:${rank===0?'2px':'0.5px'} solid var(${d.bdr});background:var(${d.bg});padding:12px 14px;margin-bottom:8px">
       <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
-        <div style="width:24px;height:24px;border-radius:50%;background:${rankColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0">${i+1}</div>
+        <div style="width:24px;height:24px;border-radius:50%;background:${rc};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0">${rank+1}</div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:500">${d.name} <span style="font-size:11px;font-weight:400;color:var(--text3)">(${d.abbr})</span>${nhiLabel}</div>
           <div style="font-size:11px;color:var(--text3);font-style:italic">${d.brand}</div>
         </div>
-        <div style="font-size:20px;font-weight:500;color:${rankColor}">${d.score}</div>
+        <div style="text-align:center">
+          <div style="font-size:18px;font-weight:500;color:${rc};line-height:1">${score}</div>
+          <div style="font-size:9px;color:var(--text3)">評分</div>
+        </div>
       </div>
       ${rows}
-      ${d.nhiOK&&d.nhiNote?`<div style="display:flex;gap:6px;font-size:12px;margin-top:3px"><span style="color:var(--text3);min-width:60px;flex-shrink:0;font-weight:500">健保規範</span><span style="color:var(--brown)">${d.nhiNote}</span></div>`:''}
+      ${showNhiNote&&d.nhiOK&&d.nhiNote?`<div style="display:flex;gap:6px;font-size:12px;margin-top:4px;padding-top:4px;border-top:0.5px solid var(--border)"><span style="color:var(--text3);min-width:60px;flex-shrink:0;font-weight:500">健保規範</span><span style="color:var(--brown)">${d.nhiNote}</span></div>`:''}
+      ${!showNhiNote?`<div style="margin-top:6px;padding:5px 8px;background:var(--brown-bg);border-radius:var(--radius);border:0.5px solid var(--brown-border)"><span style="font-size:11px;color:var(--brown)">⚠️ 目前不符健保給付條件，需自費或等待條件改變後申請。GINA 2025 認為此病人臨床上適合此藥。</span></div>`:''}
     </div>`;
-  }).join('');
+  }
 
-  a.innerHTML=summaryChips+alerts
-    +`<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin:12px 0 8px">生物製劑建議（依適合程度評分排序）</div>`
-    +dcHTML
-    +AL('info','<strong>使用注意（GINA 2025 + 健保規範）：</strong><br>· 所有藥物需<strong>事前審查核准</strong>；使用 <strong>32 週後評估</strong>惡化改善情形<br>· Dupilumab 不得與其他氣喘生物製劑併用<br>· 第一劑勿與疫苗同日施打；冷藏注射器注射前先回溫至室溫<br>· OCS 逐步減量：監測晨間 cortisol；停 OCS 後 6 個月仍需類固醇補充（手術/生病）<br>· Eos ≥300/µL：先排除 Strongyloides 等寄生蟲感染再開始生物製劑')
-    +`<div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="BS.step=5;bRender()" style="padding:7px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--border2);background:transparent;color:var(--text2)">← 修改條件</button>
-      <button onclick="BS.step=1;Object.assign(BS,{age:null,ocs:null,exac:null,eos:150,ige:200,atopy:null,comorbid:[]});bRender()" style="padding:7px 18px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--blue);background:var(--blue);color:#fff">重新評估</button>
-    </div>
-    <div style="font-size:11px;color:var(--text3);margin-top:12px;border-top:0.5px solid var(--border);padding-top:8px;line-height:1.6">
-      來源：GINA Severe Asthma Guide V6.0 July 2025 · 台灣健保給付規定第6節 115/3/1版<br>
-      健保規範：Omalizumab 111/2/1 · Mepolizumab/Benralizumab 115/4/1 · Dupilumab 113/2/1 · Tezepelumab 113/6/1<br>
-      ⚠️ 本工具僅供臨床決策參考，評分為相對參考值。實際用藥需依健保審查核准、個別病患狀況及主治醫師判斷。
+  /* Section header */
+  function secHdr(title, color, bgColor, borderColor, icon){
+    return `<div style="display:flex;align-items:center;gap:8px;margin:14px 0 8px;padding:8px 12px;border-radius:var(--radius);background:${bgColor};border:0.5px solid ${borderColor}">
+      <span style="font-size:16px">${icon}</span>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:${color}">${title}</div>
+      </div>
     </div>`;
+  }
+
+  let sectionsHTML = '';
+
+  /* Section 1: NHI eligible */
+  if(nhiDrugs.length > 0){
+    sectionsHTML += secHdr('可申請健保給付的生物製劑','var(--green)','var(--green-bg)','var(--green-border)','✅');
+    sectionsHTML += nhiDrugs.map((d,i) => makeDrugCard(d, i, true)).join('');
+  } else {
+    sectionsHTML += secHdr('健保給付選項','var(--green)','var(--green-bg)','var(--green-border)','✅');
+    sectionsHTML += `<div style="padding:12px;border:0.5px dashed var(--border2);border-radius:var(--radius-lg);font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px">目前輸入條件下，無符合健保給付資格的生物製劑</div>`;
+  }
+
+  /* Section 2: GINA only */
+  if(ginaDrugs.length > 0){
+    sectionsHTML += secHdr('符合 GINA 2025 建議（目前需自費）','var(--brown)','var(--brown-bg)','var(--brown-border)','📋');
+    sectionsHTML += `<div style="font-size:12px;color:var(--brown);margin-bottom:8px;line-height:1.6">以下藥物符合 GINA 2025 重症氣喘治療建議，但目前不符合台灣健保給付條件（主因：OCS 依賴條件、年齡限制或 Eos 閾值）。若病人臨床上確有需求，可與病患討論自費選項或等待條件變化後再申請健保。</div>`;
+    sectionsHTML += ginaDrugs.map((d,i) => makeDrugCard(d, i, false)).join('');
+  }
+
+  const footerNav = `<div style="display:flex;gap:8px;margin-top:12px">
+    <button onclick="BS.step=5;bRender()" style="padding:7px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--border2);background:transparent;color:var(--text2)">← 修改條件</button>
+    <button onclick="BS.step=1;Object.assign(BS,{age:null,ocs:null,exac:null,eos:150,ige:200,atopy:null,comorbid:[]});bRender()" style="padding:7px 18px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--blue);background:var(--blue);color:#fff">重新評估</button>
+  </div>`;
+
+  const footNote = `<div style="font-size:11px;color:var(--text3);margin-top:12px;border-top:0.5px solid var(--border);padding-top:8px;line-height:1.6">
+    評分說明：健保區評分（nhiScore）依健保核心條件加權；GINA 區評分（ginaScore）依 GINA 2025 biomarker 閾值與預測因子加權，兩區分開排序。<br>
+    來源：GINA Severe Asthma Guide V6.0 July 2025 · 台灣健保給付規定第6節 115/3/1版<br>
+    ⚠️ 本工具僅供臨床決策參考。實際用藥需依健保審查核准、個別病患狀況及主治醫師判斷。
+  </div>`;
+
+  a.innerHTML = summaryChips + alerts
+    + sectionsHTML
+    + AL('info','<strong>使用注意（GINA 2025 + 健保）：</strong><br>· 所有健保藥物需<strong>事前審查核准</strong>；使用 <strong>32 週後評估</strong>惡化改善情形<br>· Dupilumab 不得與其他氣喘生物製劑併用<br>· 第一劑勿與疫苗同日施打；冷藏注射器注射前先回溫至室溫<br>· OCS 逐步減量：監測晨間 cortisol；停 OCS 後 6 個月仍需類固醇補充<br>· Eos ≥300/µL：先排除 Strongyloides 等寄生蟲感染')
+    + footerNav
+    + footNote;
 }
+
 
 /* ── Drug builders ── */
 function bDrugOma(isAdult,isTeen,isChild){
@@ -1346,116 +1403,151 @@ function bDrugOma(isAdult,isTeen,isChild){
   const igeOK=BS.ige>=30&&BS.ige<=1300;
   const atopyOK=BS.atopy===true;
   const nhiOK=(isAdult||isTeen||isChild)&&igeOK&&atopyOK&&BS.exac;
-  let score=0;
-  if(igeOK)score+=2;if(atopyOK)score+=3;if(BS.eos>=260)score+=2;
-  if(BS.comorbid.includes('nasal_polyp'))score+=2;if(BS.comorbid.includes('food_allergy'))score+=2;
-  if(!igeOK)score-=3;if(!atopyOK)score-=2;
-  return{name:'Omalizumab',brand:'Xolair',abbr:'Anti-IgE',bg:'--blue-bg',bdr:'--blue-border',nhiOK,score:Math.max(0,score),
+  const ginaOK=ageOK&&igeOK&&atopyOK;
+  // nhiScore: weighted by NHI-specific factors
+  let nhiScore=0;
+  if(igeOK)nhiScore+=3;if(atopyOK)nhiScore+=3;if(BS.eos>=260)nhiScore+=2;
+  if(BS.comorbid.includes('nasal_polyp'))nhiScore+=2;if(BS.comorbid.includes('food_allergy'))nhiScore+=2;
+  if(!igeOK)nhiScore=0;if(!atopyOK)nhiScore=0;
+  // ginaScore: GINA clinical fit
+  let ginaScore=0;
+  if(igeOK)ginaScore+=2;if(atopyOK)ginaScore+=3;if(BS.eos>=260)ginaScore+=2;
+  if(BS.comorbid.includes('nasal_polyp'))ginaScore+=2;if(BS.comorbid.includes('food_allergy'))ginaScore+=2;
+  return{name:'Omalizumab',brand:'Xolair',abbr:'Anti-IgE',bg:'--blue-bg',bdr:'--blue-border',
+    nhiOK,ginaOK,nhiScore:Math.max(0,nhiScore),ginaScore:Math.max(0,ginaScore),
     nhiNote:nhiOK?'需事前審查 · 每月≤2次 · 使用16週評估':'',
     rows:[
       {lbl:'機轉',val:'Anti-IgE：結合游離 IgE Fc 端，↓游離 IgE、↓FcεRI 表達'},
-      {lbl:'GINA適用',val:ageOK&&igeOK&&atopyOK?'符合（IgE 在範圍 + 過敏致敏確認）':'不符合（IgE 範圍外 或 無過敏致敏）',ok:(ageOK&&igeOK&&atopyOK)?'ok':'no'},
+      {lbl:'GINA適用',val:ginaOK?'✓ 符合（IgE 在範圍 + 過敏致敏確認）':'✗ 不符合（IgE 範圍外 或 無過敏致敏）',ok:ginaOK?'ok':'no'},
       {lbl:'健保資格',val:nhiOK?'✓ 符合（≥6歲，IgE 30–1300，過敏致敏+，高劑量ICS失敗，惡化條件）':'✗ 不符合健保規範',ok:nhiOK?'ok':'no'},
-      {lbl:'IgE',val:BS.ige+' IU/mL → '+(igeOK?'在 30–1300 範圍 ✓':'不在 30–1300 範圍 ✗'),ok:igeOK?'ok':'no'},
-      {lbl:'Eos預測',val:BS.eos>=260?'≥260/µL：反應預測因子 ++（GINA）':BS.eos>=150?'150–259/µL：輕度支持':'<150/µL：低支持（但觀察性研究低/高 Eos 均可能有效）'},
+      {lbl:'IgE',val:BS.ige+' IU/mL → '+(igeOK?'在 30–1300 範圍 ✓':'不在 30–1300 範圍 ✗（健保/GINA均不適用）'),ok:igeOK?'ok':'no'},
+      {lbl:'Eos預測',val:BS.eos>=260?'≥260/µL：反應預測因子 ++（GINA）':BS.eos>=150?'150–259/µL：輕度支持（觀察性研究低/高Eos均有效）':'<150/µL：低支持',ok:BS.eos>=260?'ok':''},
       {lbl:'共病',val:[BS.comorbid.includes('nasal_polyp')?'鼻息肉 ✓':'',BS.comorbid.includes('food_allergy')?'IgE媒介食物過敏 ✓':''].filter(Boolean).join('；')||'無特定共病加分'},
       {lbl:'給藥',val:'SC q2–4w，依體重+IgE劑量表；可自行注射'},
       {lbl:'副作用',val:'注射部位反應；過敏性休克 ~0.2%；含 polysorbate'},
     ]};
 }
+
 function bDrugMepo(isAdult,isTeen,isChild){
   const ageOK=isAdult||isTeen||isChild;
-  const eosGINA=BS.eos>=150;const eosNHI=BS.eos>=300;
+  const eosGINA=BS.eos>=150;
+  const eosNHI=BS.eos>=300;
   const nhiOK=ageOK&&eosNHI&&BS.ocs&&BS.exac;
-  let score=0;
-  if(eosGINA)score+=3;if(BS.eos>=300)score+=2;if(BS.eos>=500)score+=2;
-  if(BS.comorbid.includes('nasal_polyp')||BS.comorbid.includes('crswnp'))score+=2;
-  if(BS.comorbid.includes('egpa'))score+=3;if(BS.ocs)score+=1;
-  return{name:'Mepolizumab',brand:'Nucala',abbr:'Anti-IL5',bg:'--green-bg',bdr:'--green-border',nhiOK,score:Math.max(0,score),
+  const ginaOK=ageOK&&eosGINA;
+  let nhiScore=0;
+  if(eosNHI)nhiScore+=3;if(BS.eos>=500)nhiScore+=2;if(BS.ocs)nhiScore+=2;
+  if(BS.comorbid.includes('nasal_polyp')||BS.comorbid.includes('crswnp'))nhiScore+=2;
+  if(BS.comorbid.includes('egpa'))nhiScore+=3;
+  let ginaScore=0;
+  if(eosGINA)ginaScore+=3;if(BS.eos>=300)ginaScore+=2;if(BS.eos>=500)ginaScore+=1;
+  if(BS.comorbid.includes('nasal_polyp')||BS.comorbid.includes('crswnp'))ginaScore+=2;
+  if(BS.comorbid.includes('egpa'))ginaScore+=3;if(BS.ocs)ginaScore+=1;
+  return{name:'Mepolizumab',brand:'Nucala',abbr:'Anti-IL5',bg:'--green-bg',bdr:'--green-border',
+    nhiOK,ginaOK,nhiScore:Math.max(0,nhiScore),ginaScore:Math.max(0,ginaScore),
     nhiNote:nhiOK?'需事前審查 · q4w · 32週評估':'',
     rows:[
       {lbl:'機轉',val:'Anti-IL5：結合循環 IL-5，抑制 eosinophil 成熟與存活'},
-      {lbl:'GINA適用',val:eosGINA?`符合（Eos ${BS.eos}≥150）`:`不符合 GINA 閾值（Eos ${BS.eos}<150）`,ok:eosGINA?'ok':'no'},
+      {lbl:'GINA適用',val:eosGINA?`✓ 符合（Eos ${BS.eos}≥150）`:`✗ 不符合 GINA 閾值（Eos ${BS.eos}<150）`,ok:eosGINA?'ok':'no'},
       {lbl:'健保資格',val:nhiOK?'✓ 符合（Eos≥300 + OCS依賴 + 惡化條件）':`✗ 不符合 ${!eosNHI?`（Eos ${BS.eos}<300，健保需≥300）`:''}${!BS.ocs?' + 需OCS依賴':''}`,ok:nhiOK?'ok':'no'},
-      {lbl:'Eos',val:`${BS.eos} cells/µL → 健保 ≥300；GINA 反應預測 ≥300 +++`,ok:BS.eos>=300?'ok':BS.eos>=150?'warn':'no'},
-      {lbl:'年齡',val:ageOK?`${isChild?'6–11歲 ✓':isTeen?'青少年 ✓':'成人 ✓'}`:'不符合',ok:ageOK?'ok':'no'},
-      {lbl:'共病',val:[BS.comorbid.includes('egpa')?'EGPA ✓（首選）':'',BS.comorbid.includes('crswnp')?'CRSwNP ✓':''].filter(Boolean).join('；')||'無特定共病加分'},
+      {lbl:'Eos',val:`${BS.eos} cells/µL → 健保需≥300；GINA反應預測：${BS.eos>=500?'≥500 +++（極強）':BS.eos>=300?'≥300 +++（強）':BS.eos>=150?'≥150 +（基本符合）':'<150 ✗'}`,ok:BS.eos>=300?'ok':BS.eos>=150?'warn':'no'},
+      {lbl:'年齡',val:ageOK?`${isChild?'6–11歲 ✓（健保≥6歲）':isTeen?'青少年 ✓':'成人 ✓'}`:'不符合',ok:ageOK?'ok':'no'},
+      {lbl:'共病',val:[BS.comorbid.includes('egpa')?'EGPA ✓✓✓（首選）':'',BS.comorbid.includes('crswnp')||BS.comorbid.includes('nasal_polyp')?'CRSwNP/鼻息肉 ✓✓':''].filter(Boolean).join('；')||'無特定共病加分'},
       {lbl:'給藥',val:'SC 100mg q4w（成人）；40mg q4w（6–11歲）；可自行注射'},
       {lbl:'副作用',val:'注射部位反應、頭痛；兒童神經系統事件較多'},
     ]};
 }
+
 function bDrugBena(isAdult){
+  const isTeen=BS.age==='teen';
   const ageNHI=isAdult;
-  const eosGINA=BS.eos>=150;const eosNHI=BS.eos>=300;
+  const eosGINA=BS.eos>=150;
+  const eosNHI=BS.eos>=300;
   const nhiOK=ageNHI&&eosNHI&&BS.ocs&&BS.exac;
-  let score=0;
-  if(eosGINA)score+=3;if(BS.eos>=300)score+=2;if(BS.eos>=500)score+=2;
-  if(BS.comorbid.includes('nasal_polyp'))score+=1;if(BS.comorbid.includes('egpa'))score+=2;
-  if(BS.ocs)score+=1;if(!isAdult)score-=2;
-  return{name:'Benralizumab',brand:'Fasenra',abbr:'Anti-IL5Rα',bg:'--green-bg',bdr:'--green-border',nhiOK,score:Math.max(0,score),
-    nhiNote:nhiOK?'需事前審查 · 前3劑q4w，後q8w · 32週評估':'',
+  const ginaOK=(isAdult||isTeen)&&eosGINA;
+  let nhiScore=0;
+  if(eosNHI)nhiScore+=3;if(BS.eos>=500)nhiScore+=2;if(BS.ocs)nhiScore+=2;
+  if(BS.comorbid.includes('egpa'))nhiScore+=2;
+  if(BS.comorbid.includes('nasal_polyp'))nhiScore+=1;
+  let ginaScore=0;
+  if(eosGINA)ginaScore+=3;if(BS.eos>=300)ginaScore+=2;if(BS.eos>=500)ginaScore+=1;
+  if(BS.comorbid.includes('egpa'))ginaScore+=2;
+  if(BS.comorbid.includes('nasal_polyp'))ginaScore+=1;
+  if(BS.ocs)ginaScore+=1;if(!isAdult)ginaScore-=1;
+  return{name:'Benralizumab',brand:'Fasenra',abbr:'Anti-IL5Rα',bg:'--green-bg',bdr:'--green-border',
+    nhiOK,ginaOK,nhiScore:Math.max(0,nhiScore),ginaScore:Math.max(0,ginaScore),
+    nhiNote:nhiOK?'需事前審查 · 前3劑q4w，後q8w · 32週評估（回診頻率最低）':'',
     rows:[
-      {lbl:'機轉',val:'Anti-IL5Rα：結合 IL-5Rα → eosinophil 凋亡（近乎完全清除）'},
-      {lbl:'GINA適用',val:(eosGINA&&(isAdult||BS.age==='teen'))?`符合（Eos ${BS.eos}≥150，≥12歲）`:`不符合（Eos<150 或 年齡<12）`,ok:(eosGINA&&(isAdult||BS.age==='teen'))?'ok':'no'},
+      {lbl:'機轉',val:'Anti-IL5Rα：結合 IL-5Rα → eosinophil 凋亡（幾乎完全清除）'},
+      {lbl:'GINA適用',val:ginaOK?`✓ 符合（Eos ${BS.eos}≥150，≥12歲）`:`✗ 不符合（Eos<150 或 年齡<12）`,ok:ginaOK?'ok':'no'},
       {lbl:'健保資格',val:nhiOK?'✓ 符合（≥18歲，Eos≥300，OCS依賴，惡化條件）':`✗ 不符合 ${!isAdult?'（健保限≥18歲成人）':''}${!eosNHI?`（Eos ${BS.eos}<300）`:''}${!BS.ocs?' + 需OCS依賴':''}`,ok:nhiOK?'ok':'no'},
-      {lbl:'Eos',val:`${BS.eos} cells/µL → 健保需≥300；幾乎完全清除 eos（Bena 獨特優勢）`,ok:BS.eos>=300?'ok':BS.eos>=150?'warn':'no'},
-      {lbl:'年齡限制',val:isAdult?'成人 ≥18歲 ✓（健保+GINA）':BS.age==='teen'?'青少年（GINA ≥12歲可，但健保限≥18歲）':'兒童（不適用）',ok:isAdult?'ok':'warn'},
-      {lbl:'共病',val:[BS.comorbid.includes('egpa')?'EGPA ✓':'',BS.comorbid.includes('nasal_polyp')?'鼻息肉（主觀改善）':''].filter(Boolean).join('；')||'無特定共病加分'},
-      {lbl:'給藥',val:'SC 30mg：第0、4、8週，後 q8w；可自行注射（較少回診頻率優勢）'},
+      {lbl:'Eos',val:`${BS.eos} cells/µL → ${BS.eos>=300?'≥300 +++（強預測力）；近乎完全清除 eosinophil':BS.eos>=150?'≥150（GINA可，健保需≥300）':'<150 ✗'}`,ok:BS.eos>=300?'ok':BS.eos>=150?'warn':'no'},
+      {lbl:'年齡',val:isAdult?'成人 ≥18歲 ✓（健保+GINA）':isTeen?'青少年（GINA ≥12歲，健保限≥18歲）':'兒童（不適用）',ok:isAdult?'ok':'warn'},
+      {lbl:'優勢',val:'維持期 q8w 注射（所有生物製劑中回診頻率最低）'},
+      {lbl:'共病',val:[BS.comorbid.includes('egpa')?'EGPA ✓✓':'',BS.comorbid.includes('nasal_polyp')?'鼻息肉（主觀改善）':''].filter(Boolean).join('；')||'無特定共病加分'},
+      {lbl:'給藥',val:'SC 30mg：第0、4、8週，後 q8w；可自行注射'},
       {lbl:'副作用',val:'注射部位反應；過敏性休克罕見'},
     ]};
 }
+
 function bDrugDupi(isAdult,isTeen,isChild){
   const ageOK=isAdult||isTeen||isChild;
   const eosOK=BS.eos>=150&&BS.eos<=1500;
   const eos1500=BS.eos>1500;
   const nhiOK=ageOK&&BS.eos>=300&&BS.ocs&&BS.exac;
-  let score=0;
-  if(eosOK)score+=3;if(BS.eos>=300&&!eos1500)score+=2;
-  if(BS.comorbid.includes('crswnp')||BS.comorbid.includes('nasal_polyp'))score+=3;
-  if(BS.comorbid.includes('atopic_derm'))score+=3;if(BS.comorbid.includes('eos_esoph'))score+=2;
-  if(BS.ocs)score+=2;if(eos1500)score-=5;
-  return{name:'Dupilumab',brand:'Dupixent',abbr:'Anti-IL4Rα',bg:'--purple-bg',bdr:'--purple-border',nhiOK,score:Math.max(0,score),
-    nhiNote:nhiOK?'需事前審查 · OCS依賴起始600mg維持300mg q2w · 32週評估 · 不得與其他氣喘生物製劑併用':'',
+  const ginaOK=ageOK&&(eosOK||BS.ocs)&&!eos1500;
+  let nhiScore=0;
+  if(BS.eos>=300&&!eos1500)nhiScore+=3;if(BS.ocs)nhiScore+=3;
+  if(BS.comorbid.includes('crswnp')||BS.comorbid.includes('nasal_polyp'))nhiScore+=3;
+  if(BS.comorbid.includes('atopic_derm'))nhiScore+=3;if(BS.comorbid.includes('eos_esoph'))nhiScore+=2;
+  if(eos1500)nhiScore=0;
+  let ginaScore=0;
+  if(eosOK)ginaScore+=3;if(BS.eos>=300)ginaScore+=2;
+  if(BS.comorbid.includes('crswnp')||BS.comorbid.includes('nasal_polyp'))ginaScore+=3;
+  if(BS.comorbid.includes('atopic_derm'))ginaScore+=3;if(BS.comorbid.includes('eos_esoph'))ginaScore+=2;
+  if(BS.ocs)ginaScore+=2;if(eos1500)ginaScore-=5;
+  const doseTxt=BS.ocs||BS.comorbid.includes('atopic_derm')||BS.comorbid.includes('crswnp')
+    ?'起始600mg，維持300mg SC q2w（OCS依賴/AD/CRSwNP）':'起始400mg，維持200mg SC q2w';
+  return{name:'Dupilumab',brand:'Dupixent',abbr:'Anti-IL4Rα',bg:'--purple-bg',bdr:'--purple-border',
+    nhiOK,ginaOK,nhiScore:Math.max(0,nhiScore),ginaScore:Math.max(0,ginaScore),
+    nhiNote:nhiOK?'需事前審查 · '+doseTxt+' · 32週評估 · 不得併用其他氣喘生物製劑':'',
     rows:[
       {lbl:'機轉',val:'Anti-IL4Rα：同時阻斷 IL-4 和 IL-13 訊號（最廣 T2 發炎阻斷）'},
-      {lbl:'GINA適用',val:(eosOK||BS.ocs)?`${eos1500?'⚠️ Eos>1500 不建議（Phase III排除）':'符合'}（Eos ${BS.eos}；${BS.ocs?'OCS依賴':''}）`:'不符合',ok:eos1500?'warn':eosOK?'ok':'warn'},
+      {lbl:'GINA適用',val:ginaOK?`✓ 符合（${eos1500?'⚠️Eos>1500不建議':eosOK?`Eos ${BS.eos} 在 150–1500 範圍`:''}${BS.ocs?'；OCS依賴型（無最低Eos要求）':''})` :`✗ ${eos1500?'Eos>1500（Phase III排除）':'不符合條件'}`,ok:eos1500?'warn':ginaOK?'ok':'no'},
       {lbl:'健保資格',val:nhiOK?'✓ 符合（≥12歲，Eos≥300，OCS依賴，惡化條件）':`✗ 不符合 ${BS.eos>=300?'':` Eos ${BS.eos}<300`}${!BS.ocs?' + 需OCS依賴':''}`,ok:nhiOK?'ok':'no'},
-      {lbl:'Eos',val:`${BS.eos} cells/µL → ${eos1500?'⚠️ >1500 Phase III排除，GINA不建議':BS.eos>=300?'≥300 +++ 強預測力':BS.eos>=150?'150–299 + 中度支持（OCS依賴型無最低閾值要求）':'<150（OCS依賴型可考慮）'}`,ok:eos1500?'warn':BS.eos>=150?'ok':'warn'},
+      {lbl:'Eos',val:`${BS.eos} cells/µL → ${eos1500?'⚠️ >1500 不建議（Phase III排除）':BS.eos>=300?'≥300 +++ 強預測力':BS.eos>=150?`150–299（GINA可，健保需≥300；OCS依賴型無最低Eos要求）`:'<150（OCS依賴型可考慮）'}`,ok:eos1500?'warn':BS.eos>=150?'ok':'warn'},
       {lbl:'OCS節省',val:'最強 OCS 節省證據：OCS依賴型中位數降低 50%，效果持續 2 年',ok:'ok'},
-      {lbl:'共病優勢',val:[BS.comorbid.includes('crswnp')||BS.comorbid.includes('nasal_polyp')?'CRSwNP/鼻息肉 ✓✓✓':'',BS.comorbid.includes('atopic_derm')?'異位性皮膚炎 ✓✓✓':'',BS.comorbid.includes('eos_esoph')?'EoE ✓':''].filter(Boolean).join('；')||'無特定共病加分'},
-      {lbl:'給藥',val:'SC：OCS依賴/AD/CRSwNP→起始600mg，維持300mg q2w；其他→起始400mg，維持200mg q2w'},
-      {lbl:'副作用',val:'注射部位反應；短暫血液eosinophilia 4–13%；停OCS後可能揭露EGPA'},
-    ]};
-}
-function bDrugTez(isAdult,isTeen){
-  const nhiOK=isAdult&&BS.exac;
-  let score=2; // broadest indication baseline
-  if(BS.eos>=150)score+=2;if(BS.eos>=300)score+=1;
-  if(BS.eos<150)score+=2; // only option without Eos threshold
-  if(BS.ocs)score-=1; // SOURCE study: no OCS sparing
-  if(!isAdult&&isTeen)score-=1;
-  return{name:'Tezepelumab',brand:'Tezspire',abbr:'Anti-TSLP',bg:'--amber-bg',bdr:'--brown-border',nhiOK,score:Math.max(0,score),
-    nhiNote:nhiOK?'需事前審查 · q4w · 32週評估 · 無Eos閾值要求':'',
-    rows:[
-      {lbl:'機轉',val:'Anti-TSLP：最上游阻斷上皮 alarmin，覆蓋最廣 T2 發炎路徑'},
-      {lbl:'GINA適用',val:(isAdult||isTeen)?'符合（≥12歲，無最低Eos閾值，T2低/高均可）':'不符合',ok:(isAdult||isTeen)?'ok':'no'},
-      {lbl:'健保資格',val:nhiOK?'✓ 符合（≥18歲，惡化條件符合，無Eos要求）':!isAdult?'✗ 不符合（健保限≥18歲成人）':'✗ 不符合',ok:nhiOK?'ok':'no'},
-      {lbl:'Eos',val:`${BS.eos} cells/µL → GINA/健保均無最低Eos門檻（T2低/高均適用，為低T2族群唯一健保選項）`,ok:'ok'},
-      {lbl:'OCS依賴',val:BS.ocs?'⚠️ OCS依賴型：SOURCE研究顯示 tezepelumab 未能顯著降低 OCS 劑量（vs placebo），劣於 Dupilumab':'非OCS依賴，無此限制',ok:BS.ocs?'warn':'ok'},
-      {lbl:'療效',val:'RCT：嚴重惡化降低30–70%；QoL、肺功能、症狀改善，不受過敏狀態影響'},
-      {lbl:'給藥',val:'SC 210mg q4w；可自行注射'},
-      {lbl:'副作用',val:'注射部位反應；過敏性休克罕見；安全性報告最長2年'},
+      {lbl:'共病優勢',val:[BS.comorbid.includes('crswnp')||BS.comorbid.includes('nasal_polyp')?'CRSwNP/鼻息肉 ✓✓✓（首選）':'',BS.comorbid.includes('atopic_derm')?'異位性皮膚炎 ✓✓✓（首選）':'',BS.comorbid.includes('eos_esoph')?'EoE ✓':''].filter(Boolean).join('；')||'無特定共病加分'},
+      {lbl:'給藥',val:doseTxt+'；可自行注射'},
+      {lbl:'副作用',val:'注射部位反應；短暫血液eosinophilia 4–13%；停OCS後可能揭露EGPA；Eos>1500不建議'},
     ]};
 }
 
-/* Hook into showTab to trigger bRender */
-const _origShowTab=showTab;
-function showTab(id,el){
-  _origShowTab(id,el);
-  if(id==='bioselector'){
-    setTimeout(()=>bRender(),50);
-  }
+function bDrugTez(isAdult,isTeen){
+  const nhiOK=isAdult&&BS.exac;
+  const ginaOK=(isAdult||isTeen)&&BS.exac;
+  let nhiScore=3; // broadest indication
+  if(BS.eos>=150)nhiScore+=1;if(BS.eos>=300)nhiScore+=1;
+  if(BS.eos<150)nhiScore+=2; // uniquely useful in low T2
+  if(BS.ocs)nhiScore-=1; // SOURCE: no OCS sparing
+  let ginaScore=3;
+  if(BS.eos>=150)ginaScore+=1;if(BS.eos>=300)ginaScore+=1;
+  if(BS.eos<150)ginaScore+=2;
+  if(BS.ocs)ginaScore-=1;
+  if(!isAdult&&isTeen)ginaScore-=1;
+  return{name:'Tezepelumab',brand:'Tezspire',abbr:'Anti-TSLP',bg:'--amber-bg',bdr:'--brown-border',
+    nhiOK,ginaOK,nhiScore:Math.max(0,nhiScore),ginaScore:Math.max(0,ginaScore),
+    nhiNote:nhiOK?'需事前審查 · q4w · 32週評估 · 無最低Eos閾值要求':'',
+    rows:[
+      {lbl:'機轉',val:'Anti-TSLP：最上游阻斷上皮 alarmin，覆蓋最廣 T2 發炎路徑（含低T2）'},
+      {lbl:'GINA適用',val:ginaOK?'✓ 符合（≥12歲，無最低Eos閾值，T2低/高均可）':'✗ 不符合',ok:ginaOK?'ok':'no'},
+      {lbl:'健保資格',val:nhiOK?'✓ 符合（≥18歲，惡化條件符合，無Eos要求）':!isAdult?'✗ 不符合（健保限≥18歲成人）':'✗ 不符合',ok:nhiOK?'ok':'no'},
+      {lbl:'Eos',val:`${BS.eos} cells/µL → 無最低Eos門檻（T2低/高均適用）；${BS.eos>=300?'高Eos → 更佳療效':BS.eos>=150?'中Eos → 療效良好':'低Eos → 仍有效（其他藥無此彈性）'}`,ok:'ok'},
+      {lbl:'低T2優勢',val:BS.eos<150?'✓✓ Eos<150：目前唯一健保可申請（成人）且無Eos閾值的選項':BS.eos<300?'✓ Eos 150–299：健保/GINA均可申請，其他藥健保需≥300':'Eos≥300 各藥均適用，高Eos預測反應較佳',ok:BS.eos<300?'ok':''},
+      {lbl:'OCS依賴',val:BS.ocs?'⚠️ SOURCE研究：OCS依賴型未能顯著降低OCS劑量（vs placebo）；Dupilumab為OCS依賴型首選':'非OCS依賴，無此限制',ok:BS.ocs?'warn':'ok'},
+      {lbl:'療效',val:'嚴重惡化↓30–70%；QoL、肺功能、症狀控制均改善，不受過敏狀態影響'},
+      {lbl:'給藥',val:'SC 210mg q4w；可自行注射'},
+      {lbl:'副作用',val:'注射部位反應；過敏性休克罕見；安全性報告最長2年'},
+    ]};
 }
 </script>
 </body>
